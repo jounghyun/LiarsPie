@@ -1,6 +1,7 @@
 // ⚙️ 설정 (코인·주식 화면 공용): 위쪽 톱니바퀴를 누르면 열린다
 //   ✈️ 텔레그램 — 봇 하나를 코인·주식이 같이 쓴다 (로그인 코드·알림)
 //   🪙 코인 계좌 / 📈 주식 계좌 — 모의투자 ↔ 실거래는 따로따로 바꾼다 (PIN)
+//     🔑 키 넣기 — 업비트·토스증권 API 키. 연결해 보고 되면 파이에만 저장한다 (집 와이파이에서만, PIN)
 //   🔒 PIN — 코인·주식 공통. 처음에는 기본 PIN 0000이라 바꾸라고 알려 준다 (톱니바퀴에도 빨간 점)
 // 열려 있는 동안 5초마다 두 봇의 상태를 새로 받는다. 위쪽 로그아웃 버튼은 로그인 코드를 켰을 때만 보인다.
 (() => {
@@ -9,16 +10,26 @@
   const ACCOUNTS = {
     coin: { title: '🪙 코인 계좌', name: '코인 계좌', status: '/api/status', control: '/api/control', broker: '업비트',
             hint: '실거래는 업비트 계좌 전체를 써요. 원화는 금고로 들어오고, 코인 계좌로 옮긴 만큼만 사고팔아요. 봇이 모르는 코인은 그 코인의 바이앤홀드 계좌로 모아요.',
-            keyless: '🔑 키 없음 · 파이에서 python3 -m mypie.keys',
+            keyless: '🔑 키 없음 · 아래 🔑 키 넣기에서 넣어요',
+            keys: { broker: 'upbit', fields: [['access', 'Access Key'], ['secret', 'Secret Key']],
+                    steps: (b, ip) => [['PC에서 ', b('업비트 웹 → 마이페이지 → Open API 관리'), '로 들어가요.'],
+                                       ['권한은 ', b('자산조회 · 주문조회 · 주문하기'), '만 체크해요. ', b('출금은 절대 체크하지 마세요.')],
+                                       ['허용 IP에 집 공인 IP ', ip, '를 넣어요.'],
+                                       ['받은 Access Key와 Secret Key를 붙여넣고 PIN을 넣은 뒤 ', b('연결해 보고 저장'), '을 눌러요. 키는 1년이 지나면 만료돼서 그때 새로 넣어요.']] },
             toLive: '⚠️ 업비트 계좌에 실제 주문이 나가요. 계좌 원화는 실거래 금고로 들어와요.',
             toPaper: '실거래 코인은 팔지 않고 그대로 둬요.' },
     stock: { title: '📈 주식 계좌', name: '주식 계좌', status: '/api/stock/status', control: '/api/stock/control', broker: '토스증권',
              hint: '실거래는 토스증권 계좌를 써요. 현금은 금고로 들어오고, 종목 계좌로 옮긴 만큼만 사고팔아요.',
-             keyless: '🔑 키 없음 · 파이에서 python3 -m mypie.toss',
+             keyless: '🔑 키 없음 · 아래 🔑 키 넣기에서 넣어요',
+             keys: { broker: 'toss', fields: [['client_id', 'Client ID'], ['secret', 'Client Secret']],
+                     steps: (b, ip) => [['PC에서 ', b('토스증권 웹(WTS) → 설정 → Open API'), '에서 Client ID · Client Secret을 발급받아요.'],
+                                        ['같은 화면 ', b('허용 IP 관리'), '에 집 공인 IP ', ip, '를 등록해요.'],
+                                        ['토스증권 앱에서 ', b('투자자지시 거래소'), '를 ', b('통합'), '(SOR)으로 해 둬요. 아니면 주문이 거절돼요.'],
+                                        ['두 값을 붙여넣고 PIN을 넣은 뒤 ', b('연결해 보고 저장'), '을 눌러요. 계좌가 여러 개면 고르는 칸이 나와요.']] },
              toLive: '⚠️ 토스증권 계좌에 실제 주문이 나가요. 계좌 현금은 실거래 금고로 들어와요.',
              toPaper: '실거래 주식은 팔지 않고 그대로 둬요.' },
   };
-  const st = { data: {}, pick: {}, mine: {}, timer: null, linking: false };
+  const st = { data: {}, pick: {}, mine: {}, timer: null, linking: false, keyShown: {} };
 
   const node = (tag, attrs = {}, ...kids) => {
     const e = document.createElement(tag);
@@ -150,10 +161,51 @@
     u.pin = pinInput();
     u.go = node('button', { type: 'button', class: 'primary', disabled: '', text: '계좌 바꾸기' });
     u.msg = node('p', { class: 'msg' });
+    // 🔑 키 넣기 · 바꾸기: 넣은 키는 다시 화면에 보이지 않는다
+    const k = a.keys, b = (text) => node('b', { text });
+    u.ip = node('b', { text: '-' });
+    u.keyInputs = k.fields.map(([name, label]) => node('input', { type: 'password', placeholder: label, autocomplete: 'off',
+      spellcheck: 'false', 'aria-label': label, 'data-name': name, style: 'flex:1 1 200px;width:auto' }));
+    u.account = node('select', { 'aria-label': '쓸 계좌', hidden: '' });
+    u.keyPin = pinInput();
+    u.keySave = node('button', { type: 'button', class: 'primary', text: '연결해 보고 저장' });
+    u.keyMsg = node('p', { class: 'msg' });
+    u.keyBox = node('details', { class: 'keys' }, node('summary', { text: `🔑 ${a.broker} 키 넣기 · 바꾸기` }),
+      node('ol', { class: 'steps' }, ...k.steps(b, u.ip).map((kids) => node('li', {}, ...kids))),
+      node('div', { class: 'field' }, ...u.keyInputs, u.account, u.keyPin, u.keySave),
+      node('p', { class: 'hint', text: '키는 파이에만 저장되고 화면에 다시 보이지 않아요. 이 화면은 https가 아니라서 집 와이파이에서만 넣을 수 있어요. '
+                                       + '넣으면 텔레그램으로 알려 줘요.' }),
+      u.keyMsg);
     panel.append(node('section', { class: 'set-sec', id: kind === 'coin' ? 'setCoin' : 'setStock' },
       node('h3', {}, a.title + ' ', node('small', { text: '모의투자와 실거래는 금고·계좌를 따로 써요 · 바꿔도 아무것도 팔지 않아요' }), u.chip),
       node('div', { class: 'field' }, node('div', { class: 'seg big', role: 'group', 'aria-label': a.title }, u.paper, u.live), u.key),
-      node('p', { class: 'hint', text: a.hint }), u.confirmRow, node('div', { class: 'actions' }, u.pin, u.go), u.msg));
+      node('p', { class: 'hint', text: a.hint }), u.confirmRow, node('div', { class: 'actions' }, u.pin, u.go), u.msg, u.keyBox));
+    const keySay = (text, cls) => { u.keyMsg.textContent = text; u.keyMsg.className = 'msg ' + (cls || ''); };
+    u.keySave.onclick = async () => {
+      const body = { broker: k.broker, pin: u.keyPin.value };
+      for (const i of u.keyInputs) body[i.dataset.name] = i.value.trim();
+      if (u.keyInputs.some((i) => !i.value.trim())) { keySay('두 칸을 다 넣어 주세요.', 'bad'); return; }
+      if (!body.pin) { keySay('PIN을 넣어 주세요.', 'bad'); u.keyPin.focus(); return; }
+      if (!u.account.hidden) body.account = u.account.value;
+      u.keySave.disabled = true;
+      keySay(`${a.broker}에 연결해 보는 중…`, 'info');
+      try {
+        const r = await post('/api/keys', body);
+        if (r.choose) {  // 계좌가 여러 개: 고르고 다시 누른다
+          u.account.replaceChildren(...r.choose.map((c) => node('option', { value: c.seq, text: c.label })));
+          u.account.hidden = false;
+        }
+        keySay(r.message, r.ok ? 'ok' : r.choose ? 'info' : 'bad');
+        if (r.ok) {
+          for (const i of u.keyInputs) i.value = '';
+          u.keyPin.value = '';
+          u.account.hidden = true;
+          say(`🔑 ${a.broker} 키를 저장했어요`, 'ok');
+          refresh();
+        }
+      } catch (e) { keySay('요청을 보내지 못했어요.', 'bad'); }
+      finally { u.keySave.disabled = false; }
+    };
     u.paper.onclick = () => { st.pick[kind] = 'paper'; renderAccount(kind); };
     u.live.onclick = () => { st.pick[kind] = 'live'; renderAccount(kind); };
     u.go.onclick = async () => {
@@ -176,6 +228,10 @@
   function renderAccount(kind) {
     const a = ACCOUNTS[kind], u = ui[kind], d = st.data[kind];
     const now = d && d.status && d.status.mode;
+    const coin = st.data.coin, ip = ((coin && coin.status && coin.status.network) || {}).ip;
+    u.ip.textContent = ip ? `(${ip})` : '(공유기 관리 화면의 외부 IP)';
+    const hasKey = d && (kind === 'coin' ? d.live_ready : d.keys);
+    if (d && !hasKey && !st.keyShown[kind]) { u.keyBox.open = true; st.keyShown[kind] = true; }  // 키가 없으면 처음 한 번 펼쳐 둔다
     if (!now) {
       u.chip.textContent = '봇이 아직 시작되지 않았어요';
       u.go.disabled = true;

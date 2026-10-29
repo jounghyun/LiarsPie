@@ -245,6 +245,21 @@ class StockBotTest(TempDb):
     def slot(self, bot):
         return next(iter(bot.book.data["slots"].values()))
 
+    def test_new_keys_are_used_without_a_restart(self):
+        """⚙️ 설정에서 키를 바꾸면 (.env가 바뀌면) 봇이 다시 켜지지 않아도 새 키로 연결한다."""
+        stamps = iter([1, 2])
+        self.toss.set(self.SYMBOL, DAY1, 100_000)
+        with mock.patch.object(stockbot, "env_stamp", lambda: next(stamps)), \
+                mock.patch.object(toss, "load_credentials", lambda: ("id", "secret", "1")):
+            bot = self.make_bot("live")
+            bot.step(at(DAY1, "08:30"))                                  # 처음: 지금 .env만 기억한다
+            self.assertIs(bot.client, self.toss)
+            self.client = FakeToss()                                     # 새 키로 만든 연결
+            self.client.set(self.SYMBOL, DAY1, 100_000)
+            bot.step(at(DAY1, "08:31"))
+        self.assertIs(bot.client, self.client)
+        self.assertIs(bot.executor.client, self.client)                  # 실거래 주문도 새 키로
+
     def test_no_keys_waits_without_crashing(self):
         self.client = None
         bot = self.make_bot()
@@ -457,6 +472,24 @@ class StockBotTest(TempDb):
         self.assertAlmostEqual(x["hold_return_pct"], 10.0)
         self.assertAlmostEqual(x["hold_pnl"], 35_000)
         self.assertAlmostEqual(x["return_pct"], 0.0)                    # RSI는 아직 안 샀다
+
+    def test_last_judgment_is_shown_outside_market_hours(self):
+        """장 밖에서 켜져도 마지막 장의 판단을 다시 세워 계좌 카드 색에 쓴다 (매매는 장 시작 계획으로)."""
+        self.toss.set(self.SYMBOL, DAY1, 100_000, prev=[candle("2026-10-21", 100, 110, 90, 100),
+                                                        candle("2026-10-20", 100, 110, 90, 100)])
+        bot = self.make_bot()
+        self.request(1, action="add", symbol=self.SYMBOL, name="SK하이닉스", strategy="buy_and_hold", amount=350_000)
+        bot.step(at(DAY1, "08:30"))
+        bot.step(at(DAY1, "09:01"))                                      # 장 시작: 계획을 세우고 산다
+        self.assertEqual(self.db.get_state("status")["slots"][0]["judged"]["day"], DAY1)
+        self.assertEqual(self.trades(), [("buy", self.SYMBOL, 3)])
+        bot = self.make_bot()                                            # 장이 끝난 뒤 봇이 다시 켜짐 (계획이 없다)
+        bot.step(at(DAY1, "16:00"))
+        x = self.db.get_state("status")["slots"][0]
+        self.assertIsNone(x["plan"])
+        self.assertEqual(x["judged"]["day"], DAY1)                       # 오늘 아침 판단을 다시 세웠다
+        self.assertTrue(x["judged"]["buy_at_open"])                      # 그냥 들고 있기: 사자
+        self.assertEqual(self.trades(), [("buy", self.SYMBOL, 3)])       # 매매는 하지 않는다
 
     def test_holiday_is_detected_when_no_trading_shows_up(self):
         self.toss.set(self.SYMBOL, DAY1, 100_000)

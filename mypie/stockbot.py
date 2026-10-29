@@ -28,6 +28,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from . import backtest, buyhold, krx, stoploss, telegram, toss
+from .keys import env_stamp
 from .config import load_config
 from .db import Database
 from .stockbroker import LiveStockExecutor, PaperStockExecutor
@@ -115,6 +116,7 @@ class StockSlot:
         self.closing = bool(entry.get("closing"))  # 팔고 빼는 중
         self.plan: DayPlan | None = None
         self.plan_day: str | None = None
+        self.last: tuple[str, DayPlan] | None = None  # 장 밖에서 켜졌을 때 다시 세운 마지막 장의 판단 (화면 색용)
 
 
 class StockBot:
@@ -149,6 +151,7 @@ class StockBot:
         self.report_day: str | None = db.get_state("report_day")
         self.stocks_day: str | None = (db.get_state("stocks") or {}).get("day")
         self.last_quotes = self.last_sync = self.last_snapshot = self.last_client_try = 0.0
+        self.env_stamp: int | None = None  # .env가 바뀌면 새 키로 다시 연결한다 (_watch_keys)
         self.ip_error = False
         self.last_error: str | None = None
         self.warned: set = set()
@@ -164,6 +167,19 @@ class StockBot:
         if mode == "live":
             return LiveStockExecutor(self.db, self.client, self.fee_rate, self.sell_tax)
         return PaperStockExecutor(self.fee_rate, self.sell_tax)
+
+    def _watch_keys(self) -> None:
+        """.env가 바뀌면 (⚙️ 설정이나 python3 -m mypie.toss로 키를 바꾸면) 새 키로 토스증권에 다시 연결한다."""
+        stamp = env_stamp()
+        if stamp == self.env_stamp:
+            return
+        first, self.env_stamp = self.env_stamp is None, stamp
+        if first or toss.load_credentials() is None:
+            return
+        self.client = self.client_factory()
+        if self.executor is not None and self.executor.mode == "live":
+            self.executor.client = self.client
+        self.last_client_try = 0.0
 
     def _ready(self) -> bool:
         """토스증권 키가 있어야 시세를 받을 수 있다 (모의투자도). 없으면 1분마다 다시 확인한다."""
@@ -189,7 +205,7 @@ class StockBot:
             slot = StockSlot(self.cfg, sid, entry)
             prev = old.get(sid)
             if prev and prev.symbol == slot.symbol and prev.rule == slot.rule:
-                slot.plan, slot.plan_day = prev.plan, prev.plan_day
+                slot.plan, slot.plan_day, slot.last = prev.plan, prev.plan_day, prev.last
             slots.append(slot)
         self.slots = slots
 
@@ -237,6 +253,7 @@ class StockBot:
         now = (now or now_kst()).astimezone(KST)
         today = now.date().isoformat()
         sess = krx.session(now, self.holidays)
+        self._watch_keys()
         if not self._ready():
             self._write_status(now, sess)
             return sess
@@ -255,6 +272,10 @@ class StockBot:
             for s in ready:
                 self._intraday(s, today)
         self._refresh_stocks(today)
+        if sess not in ("open", "closing"):
+            for s in self.slots:
+                if s.plan is None and s.last is None:
+                    self._look_back(s, sess, today)
         self._update_rankings(today)
         if sess == "after" and self.open_day == today:
             self._close_report(today)
@@ -331,6 +352,19 @@ class StockBot:
         slot.plan = slot.strategy.plan(history, today_open)
         slot.plan_day = today
         self.event("info", f"[{today}] {slot.name} · {slot.strategy.label} · {slot.plan.note}")
+
+    def _look_back(self, slot: StockSlot, sess: str, today: str) -> None:
+        """장 밖에서 켜져서 계획이 없을 때: 모아 둔 정규장 일봉으로 마지막 장 시작의 판단을 다시 세운다.
+        계좌 카드에서 전략마다 사자·팔자 색을 보여주는 데만 쓰고, 매매는 장 시작에 세우는 계획으로 한다."""
+        if not regular_ready(self.db, slot.symbol):
+            return
+        history = self.db.candle_history(slot.symbol, slot.strategy.window + 1, REGULAR_TF)
+        today_open = (self.quotes.get(slot.symbol) or {}).get("open")
+        if sess == "after" and today_open and history and history[-1]["day"] < today:
+            # 오늘 장이 끝났는데 오늘 일봉은 아직 없다: 오늘 아침 판단 (어제까지 일봉 + 오늘 시가, _plan과 같다)
+            slot.last = (today, slot.strategy.plan(history[-slot.strategy.window:], today_open))
+        elif len(history) >= 2:
+            slot.last = (history[-1]["day"], slot.strategy.plan(history[:-1], history[-1]["open"]))
 
     def _ensure_history(self, symbol: str, today: str, wanted: int) -> bool:
         """일봉을 모으고 정규장 일봉을 맞춘다. 정규장 일봉까지 다 됐으면 True."""
@@ -757,6 +791,7 @@ class StockBot:
                     changed = True
                 changed |= bool(s.get("hold_cash")) and bool(self.prices.get(slot.symbol))
                 hold_value = buyhold.settle(s, self.prices.get(slot.symbol))
+                judged = (slot.plan_day, slot.plan) if slot.plan else slot.last
                 slots.append({
                     "id": slot.id, "symbol": slot.symbol, "name": slot.name, "price": price,
                     "change_rate": (price / q["prev_close"] - 1) * 100 if q.get("prev_close") else None,
@@ -767,6 +802,8 @@ class StockBot:
                     "stop_loss": slot.stop_loss, "stop_price": self._loss_line(slot),  # 손절선 (들고 있을 때만 값)
                     "closing": slot.closing,  # 팔고 빼는 중
                     "plan": asdict(slot.plan) if slot.plan and slot.plan_day == today else None,
+                    # 마지막 장의 판단 (장 밖에서도 계좌 카드에 전략마다 사자·팔자 색을 칠한다)
+                    "judged": {"day": judged[0], **asdict(judged[1])} if judged else None,
                     "state_text": self._state_text(slot, sess, today), "holding": s["qty"] > 0,
                     "cash": s["cash"], "qty": s["qty"], "avg_price": s["avg_price"], "cost": s["cost"],
                     "contrib": s["contrib"], "value": value, "equity": equity,

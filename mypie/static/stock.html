@@ -58,9 +58,11 @@
       <li>PC에서 <b>토스증권 웹(WTS)</b>에 로그인 → <b>설정 → Open API</b>에서 <b>Client ID · Client Secret</b>을 발급받아요.</li>
       <li>같은 화면 <b>허용 IP 관리</b>에 집 IP <b id="homeIp">-</b> 를 등록해요.</li>
       <li>토스증권 앱에서 <b>투자자지시 거래소</b>를 <b>통합(SOR)</b>으로 해 두세요. 아니면 주문이 거절돼요.</li>
-      <li>파이에서 <code>python3 -m mypie.toss</code> 를 실행하고 두 값을 붙여넣으면 끝이에요. 1분 안에 이 화면이 살아나요.</li>
+      <li>위쪽 <b>⚙️ 설정 → 📈 주식 계좌 → 🔑 키 넣기</b>에 두 값과 PIN을 넣으면 끝이에요 (집 와이파이에서). 1분 안에 이 화면이 살아나요.</li>
     </ol>
-    <p class="desc">키는 파이의 .env 파일에만 저장되고, 처음에는 <b>모의투자</b>(가상 돈 100만 원)로 시작해요.</p>
+    <p class="desc">키는 파이의 .env 파일에만 저장되고, 처음에는 <b>모의투자</b>(가상 돈 100만 원)로 시작해요.
+      파이에서 <code>python3 -m mypie.toss</code>로 넣어도 돼요.</p>
+    <button type="button" class="primary" onclick="document.getElementById('gear').click()">⚙️ 키 넣으러 가기</button>
   </section>
 
   <!-- 개요 -->
@@ -375,7 +377,7 @@ function renderSlots(s) {
       el('span', { class: 'chip', text: x.holding ? `🟢 ${x.qty.toLocaleString()}주` : '⏳ 대기' })));
     const price = el('div', { class: 'slot-price num' }, won(x.price) + ' ');
     if (x.change_rate != null) { const b = el('span', { class: 'badge', text: pct(x.change_rate) }); tone(b, x.change_rate); b.classList.add(x.change_rate > 0 ? 'up' : x.change_rate < 0 ? 'down' : 'x'); price.append(b); }
-    card.append(price, el('div', { class: 'slot-strat' }, el('b', { text: '🧠 ' + x.strategy.label }),
+    card.append(price, el('div', { class: 'slot-strat' }, el('b', {}, '🧠 ', ...ruleNodes(x.rule, (n) => strat(n).label, ruleSignals(x))),
                                    x.stop_loss > 0 ? el('span', { class: 'tag stop', text: '🛑 ' + stopText(x.stop_loss) }) : '',
                                    x.closing ? el('span', { class: 'tag stop', text: '🧹 팔고 빼는 중' }) : '', ' ' + planLine(x)),
                 el('div', { class: 'slot-state', text: (x.holding ? '🟢 ' : '⏳ ') + x.state_text }));

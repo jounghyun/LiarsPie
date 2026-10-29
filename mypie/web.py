@@ -13,6 +13,7 @@
   POST /api/control  포트폴리오(종목·전략·비중)·계좌·한도 변경 (PIN 필요)
   POST /api/ranking  아직 순위가 없는 종목의 전략 순위 계산 부탁 (PIN 불필요)
   POST /api/telegram/start|link|action   웹페이지에서 텔레그램 연결·관리 (PIN 필요)
+  POST /api/keys                         업비트·토스증권 API 키 넣기 (PIN 필요, 집 와이파이에서만)
   POST /api/login/send|verify, /api/logout  텔레그램 코드 로그인
 
 텔레그램이 연결돼 있으면 모든 페이지·API에 로그인이 필요하다 (/healthz 제외).
@@ -34,14 +35,15 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from . import auth, backtest, krx, pin, simjob, simulation, stoploss, telegram, timeframes, toss, upbit
+from . import auth, backtest, krx, network, pin, simjob, simulation, stoploss, telegram, timeframes, toss, upbit
 from .stockbot import REGULAR_TF, regular_ready
 from .broker import MIN_ORDER_KRW
 from .config import load_config
 from .db import Database
-from .keys import load_keys, read_env, write_env
+from .keys import load_keys, read_env, save_keys, write_env
 from .strategies import STOCK_STRATEGIES, STRATEGIES, strategy_params
 from .strategies.combo import check_rule, is_simple, make_rule, normalize_rule, rule_fields
+from .sshwatch import is_home
 from .timeutil import now_kst, ts
 
 log = logging.getLogger("mypie.web")
@@ -645,7 +647,7 @@ def request_stock(stock_db: str, main_db: str, data: dict) -> tuple[int, dict]:
                 return 400, {"ok": False, "message": "계좌를 다시 골라 주세요."}
             if mode == "live":
                 if toss.load_credentials() is None:
-                    return 400, {"ok": False, "message": "토스증권 키가 아직 없어요. 파이에서 python3 -m mypie.toss 로 먼저 등록하세요."}
+                    return 400, {"ok": False, "message": "토스증권 키가 아직 없어요. ⚙️ 설정 → 📈 주식 계좌에서 먼저 넣어 주세요."}
                 if data.get("confirm_live") is not True:
                     return 400, {"ok": False, "message": "실거래는 '실제 돈으로 거래한다'에 체크해야 바꿀 수 있어요."}
             request["mode"] = mode
@@ -988,7 +990,7 @@ def request_coin(db_path: str, data: dict) -> tuple[int, dict]:
                 return 400, {"ok": False, "message": "계좌를 다시 골라 주세요."}
             if mode == "live":
                 if load_keys() is None:
-                    return 400, {"ok": False, "message": "업비트 API 키가 아직 없어요. 파이에서 python3 -m mypie.keys 로 먼저 등록하세요."}
+                    return 400, {"ok": False, "message": "업비트 API 키가 아직 없어요. ⚙️ 설정 → 🪙 코인 계좌에서 먼저 넣어 주세요."}
                 if data.get("confirm_live") is not True:
                     return 400, {"ok": False, "message": "실거래는 '실제 돈으로 거래한다'에 체크해야 바꿀 수 있어요."}
             request["mode"] = mode
@@ -1120,6 +1122,92 @@ def change_pin(db_path: str, data: dict) -> tuple[int, dict]:
     default = new == pin.DEFAULT_PIN
     return 200, {"ok": True, "message": "PIN을 바꿨어요." + (" 아직 기본 PIN(0000)과 같아요." if default else ""),
                  "pin_default": default}
+
+
+# 키에 쓸 수 있는 글자: 눈에 보이는 영문·숫자·기호 (따옴표 빼고). 줄바꿈이 섞이면 .env에 다른 값이 끼어들 수 있다
+KEY_TEXT = re.compile(r"[!#-&(-~]{8,300}")
+KEY_FIELDS = {"upbit": ("access", "secret"), "toss": ("client_id", "secret")}
+
+
+def save_broker_keys(db_path: str, data: dict, ip: str) -> tuple[int, dict]:
+    """⚙️ 설정에서 업비트·토스증권 API 키 넣기 (PIN 필요). 연결해 보고 되면 파이의 .env에만 저장한다.
+    이 웹페이지는 https가 아니라서 집 와이파이(사설 IP)에서 온 요청만 받는다. 키는 다시 화면으로 보내지 않는다.
+    봇들은 .env가 바뀐 걸 알아채고 새 키를 쓴다."""
+    if not is_home(ip):
+        return 403, {"ok": False, "message": "키는 집 와이파이에서만 넣을 수 있어요. 이 화면은 https가 아니라서, "
+                                             "밖에서 보내면 키가 암호 없이 인터넷을 지나가요."}
+    failure = _pin_ok(db_path, str(data.get("pin", "")))
+    if failure:
+        return failure[0], {"ok": False, "message": failure[1]}
+    broker = data.get("broker")
+    if broker not in KEY_FIELDS:
+        return 400, {"ok": False, "message": "알 수 없는 요청이에요."}
+    first, second = (str(data.get(k) or "").strip() for k in KEY_FIELDS[broker])
+    if not KEY_TEXT.fullmatch(first) or not KEY_TEXT.fullmatch(second):
+        return 400, {"ok": False, "message": "두 칸 모두 발급 화면에서 복사한 그대로 붙여넣어 주세요."}
+    db = _open(db_path)
+    try:
+        home = ((db.get_state("network") if db else None) or {}).get("ip")
+    finally:
+        if db:
+            db.close()
+    where = f"집 공인 IP({home})" if home else "집 공인 IP"
+    if broker == "upbit":
+        return _save_upbit(first, second, where)
+    return _save_toss(first, second, str(data.get("account") or ""), where)
+
+
+def _save_upbit(access: str, secret: str, where: str) -> tuple[int, dict]:
+    client = upbit.UpbitClient(access, secret)
+    try:
+        accounts = client.accounts()
+    except upbit.UpbitError as e:
+        hint = (f"업비트 Open API 관리에서 허용 IP에 {where}를 넣었는지 확인해 주세요" if network.is_ip_error(e)
+                else "키를 다시 복사해서 넣어 보세요")
+        return 400, {"ok": False, "message": f"업비트에 연결하지 못했어요 ({e}). {hint}."}
+    try:
+        expire_at = client.key_expiry()
+    except upbit.UpbitError:
+        expire_at = None
+    save_keys(access, secret)
+    _keys_notice("업비트")
+    krw = sum(float(a["balance"]) + float(a["locked"]) for a in accounts if a.get("currency") == "KRW")
+    return 200, {"ok": True, "message": f"연결 성공! 키를 저장했어요 · 업비트 원화 {krw:,.0f}원"
+                                       + (f" · 만료 {expire_at[:10]}" if expire_at else "")}
+
+
+def _save_toss(client_id: str, secret: str, pick: str, where: str) -> tuple[int, dict]:
+    client = toss.TossClient(client_id, secret)  # 확인만 한다 (봇이 새 키로 토큰을 따로 받는다)
+    try:
+        accounts = [a for a in client.accounts() if a.get("accountType", "BROKERAGE") == "BROKERAGE"]
+    except toss.TossError as e:
+        hint = (f"토스증권 Open API의 허용 IP에 {where}를 등록했는지 확인해 주세요" if toss.is_ip_error(e)
+                else "Client ID·Secret을 다시 복사해서 넣어 보세요")
+        return 400, {"ok": False, "message": f"토스증권에 연결하지 못했어요 ({e}). {hint}."}
+    if not accounts:
+        return 400, {"ok": False, "message": "종합매매 계좌를 찾지 못했어요. 토스증권 앱에서 계좌를 확인해 주세요."}
+    choose = [{"seq": str(a["accountSeq"]), "label": f"계좌 ****{str(a.get('accountNo', ''))[-4:]}"} for a in accounts]
+    if len(accounts) > 1 and pick not in [c["seq"] for c in choose]:
+        return 200, {"ok": False, "choose": choose, "message": "계좌가 여러 개예요. 쓸 계좌를 고르고 다시 눌러 주세요."}
+    seq = pick if pick in [c["seq"] for c in choose] else choose[0]["seq"]
+    client.account = seq
+    try:
+        cash = client.cash()
+    except toss.TossError as e:
+        return 400, {"ok": False, "message": f"계좌를 확인하지 못했어요 ({e})."}
+    write_env({toss.CLIENT_ID: client_id, toss.CLIENT_SECRET: secret, toss.ACCOUNT: seq})
+    _keys_notice("토스증권")
+    label = next(c["label"] for c in choose if c["seq"] == seq)
+    return 200, {"ok": True, "message": f"연결 성공! 키를 저장했어요 · {label} · 주문가능 현금 {cash:,.0f}원. "
+                                       "토스증권 앱에서 투자자지시 거래소를 통합(SOR)으로 해 두세요."}
+
+
+def _keys_notice(broker: str) -> None:
+    try:
+        telegram.send(f"🔑 웹페이지 ⚙️ 설정에서 {broker} API 키를 새로 넣었어요. "
+                      f"직접 한 게 아니면 {broker}에서 그 키를 바로 지우고 PIN을 바꿔 주세요.")
+    except telegram.TelegramError:
+        pass
 
 
 def telegram_start(db_path: str, data: dict) -> tuple[int, dict]:
@@ -1377,7 +1465,7 @@ class Handler(BaseHTTPRequestHandler):
         public = ("/api/login/send", "/api/login/verify")
         private = ("/api/control", "/api/ranking", "/api/logout",
                    "/api/telegram/start", "/api/telegram/link", "/api/telegram/action",
-                   "/api/stock/control", "/api/stock/ranking", "/api/simjob", "/api/pin")
+                   "/api/stock/control", "/api/stock/ranking", "/api/simjob", "/api/pin", "/api/keys")
         if route not in public + private:
             self._send(404, b"not found", "text/plain")
             return
@@ -1402,6 +1490,8 @@ class Handler(BaseHTTPRequestHandler):
                 code, body = request_stock(self.stock_db_path, self.db_path, data)
             elif route == "/api/pin":
                 code, body = change_pin(self.db_path, data)
+            elif route == "/api/keys":
+                code, body = save_broker_keys(self.db_path, data, self._client()["ip"])
             elif route == "/api/simjob":
                 code, body = simjob_request(self.db_path, self.stock_db_path, self.cfg, data)
             elif route == "/api/stock/ranking":

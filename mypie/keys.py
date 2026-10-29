@@ -39,6 +39,14 @@ def write_env(updates: dict, path: Path = ENV_PATH) -> None:
     os.chmod(path, 0o600)
 
 
+def env_stamp(path: Path = ENV_PATH) -> int:
+    """.env가 마지막으로 바뀐 때. 봇이 키가 바뀐 걸(⚙️ 설정이나 명령으로) 알아채는 데 쓴다. 없으면 0."""
+    try:
+        return path.stat().st_mtime_ns
+    except OSError:
+        return 0
+
+
 def load_keys(path: Path = ENV_PATH) -> tuple[str, str] | None:
     """(access_key, secret_key). 없으면 None."""
     values = read_env(path)
@@ -54,7 +62,8 @@ def save_keys(access: str, secret: str, path: Path = ENV_PATH) -> None:
 RENEW_STEPS = ("갱신 방법\n"
                "1) PC에서 업비트 웹 → 마이페이지 → Open API 관리 → 새 키 발급\n"
                "   (자산조회·주문조회·주문하기만 체크, 출금은 체크하지 마세요. 허용 IP에 집 IP)\n"
-               "2) 파이에서: cd ~/My_Pie && python3 -m mypie.keys  (Access·Secret 붙여넣기)\n"
+               "2) 웹페이지 ⚙️ 설정 → 🪙 코인 계좌 → 🔑 키 넣기에 붙여넣기 (집 와이파이에서)\n"
+               "   또는 파이에서: cd ~/My_Pie && python3 -m mypie.keys\n"
                "3) 확인: python3 -m mypie.keys --check")
 
 

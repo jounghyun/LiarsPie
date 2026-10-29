@@ -22,7 +22,7 @@ from pathlib import Path
 from unittest import mock
 
 from mypie import (auth, backtest, indicators, keys, krx, network, pin, reports, simjob, simulation, sshwatch, stoploss,
-                   telegram, timeframes, upbit, web)
+                   telegram, timeframes, toss, upbit, web)
 from mypie.bot import Bot, check_account
 from mypie.broker import Book, LiveExecutor, PaperExecutor, migrate_book
 from mypie.config import DEFAULTS
@@ -400,6 +400,18 @@ class ComboRuleTest(unittest.TestCase):
         plan = make_rule(rule, lambda n: STRATEGIES[n](None)).plan(flat_history(10), 100.0)  # 둘 다 봉이 모자람
         self.assertFalse(plan.sell_at_open)
         self.assertIn("데이터 부족", plan.note)
+        self.assertEqual(plan.signals, {"rsi": None, "ma_cross": None, "macd": None})  # 화면에 색을 칠하지 않는다
+
+    def test_combo_tells_what_each_strategy_says_now(self):
+        """계좌 카드 색: 전략마다 혼자였다면 지금 들고 있을지 (사자 True · 팔자 False)."""
+        rule = normalize_rule({"strategy": "ma_cross", "sell": ["ma_cross", "buy_and_hold"], "sell_op": "or"})
+        prices = [100 + 10 * math.sin(i / 6) for i in range(200)]
+        history = [candle(f"d{i:03d}", p, p * 1.01, p * 0.99, p) for i, p in enumerate(prices)]
+        for cut in (180, 190):  # 골든크로스가 위·아래인 두 때
+            plan = make_rule(rule, lambda n: STRATEGIES[n](None)).plan(history[:cut], prices[cut])
+            alone = STRATEGIES["ma_cross"](None).plan(history[:cut], prices[cut])
+            self.assertEqual(plan.signals, {"ma_cross": alone.buy_at_open, "buy_and_hold": True})
+        self.assertIsNone(STRATEGIES["ma_cross"](None).plan(history, prices[-1]).signals)  # 전략 하나는 화면이 계획으로 정한다
 
 
 class TempDbTest(unittest.TestCase):
@@ -980,6 +992,61 @@ class WebTest(TempDbTest):
         self.assertEqual(web.request_coin(self.path, {**self.request, "pin": "5678"})[0], 200)
         self.assertFalse(web.build_payload(self.path)["pin_default"])
         self.assertTrue(pin.is_default(pin.make("0000")))                      # 0000으로 다시 정해도 '기본'으로 알려 준다
+
+    def test_exchange_keys_are_checked_then_saved_only_from_home(self):
+        """⚙️ 설정의 키 넣기: 집 와이파이 + PIN, 연결해 보고 되면 저장. 키는 응답에 다시 넣지 않는다."""
+        saved = []
+
+        class FakeUpbit:
+            def __init__(self, access, secret):
+                self.ok = secret != "wrongsecret"
+
+            def accounts(self):
+                if not self.ok:
+                    raise UpbitError("invalid_access_key")
+                return [{"currency": "KRW", "balance": "120000", "locked": "0"}, {"currency": "BTC", "balance": "0.1", "locked": "0"}]
+
+            def key_expiry(self):
+                return "2027-10-29T00:00:00+09:00"
+
+        good = {"broker": "upbit", "access": "A" * 40, "secret": "S" * 40, "pin": "2468"}
+        with mock.patch.object(web.upbit, "UpbitClient", FakeUpbit), \
+                mock.patch.object(web, "save_keys", lambda a, s: saved.append((a, s))):
+            self.assertEqual(web.save_broker_keys(self.path, good, "211.235.10.20")[0], 403)        # 집 밖 (휴대폰 통신사 IP)
+            self.assertEqual(web.save_broker_keys(self.path, {**good, "pin": "1111"}, "192.168.0.5")[0], 403)
+            self.assertEqual(web.save_broker_keys(self.path, {**good, "secret": "S" * 20 + "\nX=1"}, "192.168.0.5")[0], 400)
+            self.assertEqual(web.save_broker_keys(self.path, {**good, "secret": "wrongsecret"}, "192.168.0.5")[0], 400)
+            self.assertEqual(saved, [])                                                             # 안 되는 키는 저장하지 않는다
+            code, body = web.save_broker_keys(self.path, good, "192.168.0.5")
+        self.assertEqual(code, 200)
+        self.assertEqual(saved, [("A" * 40, "S" * 40)])
+        self.assertIn("120,000원", body["message"])
+        self.assertIn("2027-10-29", body["message"])
+        self.assertNotIn("S" * 40, json.dumps(body))
+
+    def test_toss_keys_ask_which_account_when_there_are_many(self):
+        written = []
+
+        class FakeToss:
+            def __init__(self, client_id, secret):
+                self.account = None
+
+            def accounts(self):
+                return [{"accountSeq": 1, "accountNo": "11112222", "accountType": "BROKERAGE"},
+                        {"accountSeq": 2, "accountNo": "33334444", "accountType": "BROKERAGE"}]
+
+            def cash(self):
+                return 500_000.0 if self.account == "2" else 0.0
+
+        data = {"broker": "toss", "client_id": "C" * 30, "secret": "T" * 30, "pin": "2468"}
+        with mock.patch.object(web.toss, "TossClient", FakeToss), mock.patch.object(web, "write_env", written.append):
+            code, body = web.save_broker_keys(self.path, data, "127.0.0.1")
+            self.assertEqual((code, body["ok"], [c["label"] for c in body["choose"]]), (200, False, ["계좌 ****2222", "계좌 ****4444"]))
+            self.assertEqual(written, [])
+            code, body = web.save_broker_keys(self.path, {**data, "account": "2"}, "127.0.0.1")
+        self.assertEqual((code, body["ok"]), (200, True))
+        self.assertIn("500,000원", body["message"])
+        self.assertEqual(written, [{toss.CLIENT_ID: "C" * 30, toss.CLIENT_SECRET: "T" * 30, toss.ACCOUNT: "2"}])
 
     def test_locks_after_too_many_failures(self):
         for _ in range(web.MAX_PIN_FAILURES):

@@ -20,6 +20,7 @@ class DayPlan:
     buy_stop: float | None = None    # 장중 이 가격 이상이면 매수 (돌파)
     sell_stop: float | None = None   # 장중 이 가격 이하이면 매도 (이탈)
     note: str = ""                   # 화면에 보여줄 한 줄 설명
+    signals: dict | None = None      # 조합만: 전략마다 이번 봉 판단 (True 사자 · False 팔자 · None 데이터 부족, 화면용)
 
 
 class Strategy:

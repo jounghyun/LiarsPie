@@ -63,6 +63,9 @@
   .set-sec h3 .chip { margin-left: auto; }
   .set-sec .steps, .set-sec .tg-open { margin-bottom: 4px; }
   .set-sec .msg { margin-top: 0; }
+  .set-sec .keys { border-top: 1px solid var(--line); padding: 10px 0 0; }  /* 🔑 키 넣기 */
+  .set-sec .keys .steps { margin: 8px 0; }
+  .set-sec .keys .field { margin-bottom: 6px; }
   @media (max-width: 560px) { .settings-panel { margin: 0; padding: 12px; } }
   .beat { display: flex; align-items: center; gap: 7px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -349,6 +352,7 @@
   .rule-tag { font-size: 12px; font-weight: 700; border-radius: 6px; padding: 3px 8px; flex: none; }
   .rule-tag.buy { background: color-mix(in srgb, var(--up) 12%, transparent); color: var(--up); }
   .rule-tag.sell { background: color-mix(in srgb, var(--down) 12%, transparent); color: var(--down); }
+  .sig-buy { color: var(--up); } .sig-sell { color: var(--down); }  /* 계좌 카드 전략 이름: 이번 봉 사자 · 팔자 */
   .rule-tag.stop { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
   .stopline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); min-width: 0; }
   .stopline .toggle { gap: 6px; }

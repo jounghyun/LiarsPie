@@ -65,7 +65,8 @@ class OrderUnknown(TossError):
 KEY_ERRORS = ("invalid_client", "login-user-not-found")  # Client ID·Secret이 만료·취소됐거나 틀림
 RENEW_STEPS = ("갱신 방법\n"
                "1) PC에서 토스증권 웹(WTS) → 설정 → Open API → Client ID·Secret 새로 발급 (허용 IP에 집 IP)\n"
-               "2) 파이에서: cd ~/My_Pie && python3 -m mypie.toss  (두 값 붙여넣기)\n"
+               "2) 웹페이지 ⚙️ 설정 → 📈 주식 계좌 → 🔑 키 넣기에 붙여넣기 (집 와이파이에서)\n"
+               "   또는 파이에서: cd ~/My_Pie && python3 -m mypie.toss\n"
                "3) 확인: python3 -m mypie.toss --check")
 
 
@@ -179,7 +180,7 @@ class TossClient:
         headers = {"Authorization": "Bearer " + token, "Accept": "application/json", "Accept-Encoding": "gzip"}
         if account:
             if not self.account:
-                raise TossError("토스증권 계좌가 정해지지 않았어요. python3 -m mypie.toss 로 다시 등록하세요")
+                raise TossError("토스증권 계좌가 정해지지 않았어요. ⚙️ 설정에서 키를 다시 넣어 주세요")
             headers["X-Tossinvest-Account"] = self.account
         data = None
         if body is not None:

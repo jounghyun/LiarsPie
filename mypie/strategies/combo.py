@@ -171,5 +171,6 @@ class Combo(Strategy):
 
         state = lambda n: "보유" if now[n] else "관망" if known[n] else SHORT
         note = " · ".join(f"{self.parts[n].label}: {state(n)}" for n in self.parts)
+        signals = {n: now[n] if known[n] else None for n in self.parts}  # 혼자였다면 지금 들고 있을지 (화면 색)
         return DayPlan(buy_at_open=buy_at_open, sell_at_open=sell_at_open, buy_stop=buy_stop,
-                       sell_stop=sell_stop, note=note)
+                       sell_stop=sell_stop, note=note, signals=signals)

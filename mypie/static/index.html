@@ -446,7 +446,7 @@ function renderSlots(s) {
     const price = el('div', { class: 'slot-price num' }, priceText(x.price) + '원 ');
     if (rate != null) { const b = el('span', { class: 'badge', text: pct(rate) }); tone(b, rate); b.classList.add(rate > 0 ? 'up' : rate < 0 ? 'down' : 'x'); price.append(b); }
     const [pl, pv] = planLine(x);
-    const strat = el('div', { class: 'slot-strat' }, el('b', { text: '🧠 ' + x.strategy.label }),
+    const strat = el('div', { class: 'slot-strat' }, el('b', {}, '🧠 ', ...ruleNodes(x.rule, stratLabel, ruleSignals(x))),
                            x.stop_loss > 0 ? el('span', { class: 'tag stop', text: '🛑 ' + stopText(x.stop_loss) }) : '', ` · ${pl} ${pv}`);
     const state = el('div', { class: 'slot-state', text: (x.holding ? '🟢 ' : '⏳ ') + x.state_text });
     const m = byMarket[x.market];
@@ -534,7 +534,7 @@ function renderAlerts(d) {
   }
   if (d.live_ready && d.key_info && d.key_info.expire_at) {
     const left = Math.floor((new Date(d.key_info.expire_at) - parseTs(d.server_time)) / 86400e3);
-    if (left <= 30) add('warn', '🔑', `업비트 API 키가 ${left}일 뒤 만료돼요.`, '새 키를 받아 python3 -m mypie.keys 로 등록하세요.');
+    if (left <= 30) add('warn', '🔑', `업비트 API 키가 ${left}일 뒤 만료돼요.`, '새 키를 받아 ⚙️ 설정 → 🪙 코인 계좌에서 넣어 주세요.');
   }
 }
 

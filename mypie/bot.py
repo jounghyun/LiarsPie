@@ -31,7 +31,7 @@ from .broker import MIN_ORDER_KRW, Book, LiveExecutor, PaperExecutor, migrate_bo
 from .config import load_config
 from .db import Database
 from .history import sync_candles
-from .keys import days_left, expired_text, expiring_text, load_keys
+from .keys import days_left, env_stamp, expired_text, expiring_text, load_keys
 from .strategies import STRATEGIES, DayPlan, create_strategy, strategy_params
 from .strategies.combo import check_rule, make_rule, normalize_rule, rule_label
 from .timeframes import bar_key, next_bar
@@ -123,6 +123,7 @@ class Bot:
         stored = db.get_state("markets") or {}
         self.markets_day: str | None = stored.get("day") if stored.get("all") else None  # 예전(상위 30개) 목록이면 바로 다시 받는다
         self.key_day: str | None = (db.get_state("key_info") or {}).get("checked")
+        self.env_stamp: int | None = None  # .env가 바뀌면 새 키를 쓴다 (_watch_keys)
         self.report_day: str | None = db.get_state("report_day")
         self.last_snapshot = 0.0
         self.last_exchange_check = 0.0
@@ -159,6 +160,19 @@ class Bot:
         self.event("info", "포트폴리오(비중)를 금고 + 코인 계좌로 옮겼어요 · 줄마다의 원화·코인은 그 계좌로, "
                            "대기 원화는 금고로", notify=True)
 
+    def _watch_keys(self) -> None:
+        """.env가 바뀌면 (⚙️ 설정이나 python3 -m mypie.keys로 키를 바꾸면) 실거래 주문에 새 키를 쓰고 만료일을 다시 본다."""
+        stamp = env_stamp()
+        if stamp == self.env_stamp:
+            return
+        first, self.env_stamp = self.env_stamp is None, stamp
+        if first:
+            return
+        keys = load_keys()
+        if keys and self.executor.mode == "live":
+            self.executor.client = upbit.UpbitClient(*keys)
+        self.key_day = None
+
     def _market_names(self) -> dict:
         """종목 → 한글 이름 (업비트 종목 목록, 하루 한 번 받아 둔다)."""
         return {m["market"]: m.get("name") or m["market"] for m in (self.db.get_state("markets") or {}).get("list", [])}
@@ -167,7 +181,7 @@ class Bot:
         if mode == "live":
             keys = load_keys()
             if not keys:
-                raise upbit.UpbitError("업비트 API 키가 없어요. 파이에서 python3 -m mypie.keys 로 등록하세요")
+                raise upbit.UpbitError("업비트 API 키가 없어요. ⚙️ 설정 → 🪙 코인 계좌에서 키를 넣어 주세요")
             return LiveExecutor(self.db, upbit.UpbitClient(*keys), self.fee_rate)
         return PaperExecutor(self.fee_rate)
 
@@ -292,6 +306,7 @@ class Bot:
 
     def step(self) -> None:
         day = trading_day()
+        self._watch_keys()
         self._check_network()
         self._recover()  # 끊기기 전 주문이 있으면 장부부터 맞춘다 (확인 못 하면 여기서 멈추고 다음 루프에 재시도)
         self._handle_requests()
@@ -626,7 +641,7 @@ class Bot:
             keys = load_keys()
             try:
                 if not keys:
-                    raise upbit.UpbitError("API 키가 없어요. 파이에서 python3 -m mypie.keys 로 등록하세요")
+                    raise upbit.UpbitError("API 키가 없어요. ⚙️ 설정 → 🪙 코인 계좌에서 키를 넣어 주세요")
                 upbit.UpbitClient(*keys).accounts()  # 키와 허용 IP가 맞는지 미리 확인
             except upbit.UpbitError as e:
                 if network.is_ip_error(e):
@@ -845,7 +860,7 @@ class Bot:
             self._key_alert(expired_text(expire_at), expired=True)
         elif left is not None and left <= 30:
             self.event("warning", f"업비트 API 키가 {expire_at[:10]}에 만료돼요 (앞으로 {left}일). "
-                                  "새 키를 받아 python3 -m mypie.keys 로 등록하세요")
+                                  "새 키를 받아 ⚙️ 설정 → 🪙 코인 계좌에서 넣어 주세요")
             if left in KEY_WARN_DAYS:  # 텔레그램은 30·14·7·3·1일 전에만 (매일 오면 귀찮으니)
                 self._key_alert(expiring_text(expire_at, left))
 
