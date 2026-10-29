@@ -1,0 +1,51 @@
+# My_Pie 설정 파일
+# 이 파일을 config.toml로 복사해서 고쳐 쓰세요. (처음 설치할 때 자동으로 복사돼요)
+# 금고·코인 계좌·전략은 웹페이지에서 바꿔요. 여기 값은 처음 시작할 때의 기본값과 세부 숫자예요.
+# 고친 뒤에는 봇을 재시작해야 적용돼요: systemctl --user restart mypie-bot mypie-web
+
+[general]
+mode = "paper"            # paper = 모의투자, live = 실거래
+interval_sec = 10         # 시세 확인 간격 (초)
+db_path = "data/mypie.db" # 기록 저장 위치
+
+[strategy]
+name = "volatility_breakout"  # 처음 쓸 전략
+
+[order]
+invest_ratio = 1.0        # 매수할 때 (봇) 원화 중 쓸 비율 (0.5 = 절반만)
+min_order_krw = 5000      # 업비트 최소 주문 금액
+
+[paper]
+initial_krw = 1000000     # 모의투자 금고 시작 금액
+fee_rate = 0.0005         # 업비트 원화 마켓 수수료 0.05%
+
+[backtest]
+days = 1095               # 전략 순위를 매길 과거 기간 (일)
+rank_by = "return"        # return = 총수익률 순 / calmar = 최대 낙폭 대비 수익 순
+
+[web]
+host = "0.0.0.0"          # 같은 공유기 안의 PC/폰에서 접속 가능 (집 밖에서 보려면 INSTALL.md 8번)
+port = 8000
+login = true              # 텔레그램이 연결돼 있으면 로그인 코드 요구 (웹페이지 ⚙️ 설정에서도 끌 수 있음)
+code_digits = 2           # 처음 로그인 코드 자릿수 (2~8). 웹페이지 ⚙️ 설정에서 바꾸면 그 값이 먼저예요. 짧을수록 입력이 편하지만 찍어서 맞히기도 쉬워요
+session_hours = 24        # 한 번 로그인한 기기(쿠키)를 다시 묻지 않는 시간
+trust_hours = 24          # 로그인한 IP는 쿠키가 없어도 이 시간 동안 다시 묻지 않아요 (0이면 끔)
+
+[stock]                   # 주식 봇 (토스증권 · 국내 주식, 서비스 이름 mypie-stock)
+db_path = "data/stock.db" # 코인과 따로 기록한다
+mode = "paper"            # 처음 계좌 (웹페이지 ⚙️ 설정에서 바꿈)
+paper_cash = 1000000      # 모의투자 금고 시작 금액
+fee_rate = 0.00015        # 매매 수수료 (사고팔 때)
+sell_tax = 0.002          # 증권거래세 (팔 때만)
+interval_sec = 10         # 장중 확인 간격 (초)
+idle_sec = 60             # 장 밖 확인 간격 (초)
+backtest_days = 1095      # 전략 순위를 매길 과거 기간 (일)
+rank_by = "return"
+
+# 전략별 숫자를 바꾸고 싶으면 이렇게 (안 적으면 기본값)
+# [params.volatility_breakout]
+# k = 0.5
+# [params.rsi]
+# period = 14
+# buy_below = 30
+# sell_above = 70
