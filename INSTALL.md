@@ -13,18 +13,18 @@
 |---|---|
 | 라즈베리파이 | 3B 이상 (3B·3B+·4·5). 3B에서 만들고 시험했어요 |
 | microSD 카드 | 16GB 이상 |
-| 정격 전원 어댑터 | 3B·3B+ 5V 2.5A, 4 5V 3A, 5 5V 5A. 전압이 모자라면 SD카드가 깨질 수 있어요 |
+| 정격 전원 어댑터 | 3B·3B+는 5V 2.5A, 4는 5V 3A, 5는 5V 5A. 전압이 모자라면 SD카드가 깨질 수 있어요 |
 | 인터넷 | 공유기에 **랜선** 연결을 권해요 (와이파이도 돼요) |
 | PC | SD카드 굽기와 처음 접속용 |
 | 텔레그램 (선택) | 로그인 코드·매매 알림을 받을 때 |
 
-외부 라이브러리는 설치할 게 없어요. 파이썬 기본 기능만 써요.
+따로 설치할 라이브러리는 없어요. 파이썬 기본 기능만 써요.
 
 ## 1. 라즈베리파이 OS 설치
 
 1. PC에 [Raspberry Pi Imager](https://www.raspberrypi.com/software/)를 설치해요.
-2. 기기를 고르고, OS는 **Raspberry Pi OS Lite (64-bit)** 를 골라요. 화면 없이 쓰기 좋아요 (Desktop도 돼요).
-3. **설정 편집(OS customisation)** 에서:
+2. 기기를 고르고, OS는 `Raspberry Pi OS Lite (64-bit)`를 골라요. 화면 없이 쓰기 좋아요 (Desktop도 돼요).
+3. **설정 편집**(OS customisation)에서:
    - 호스트 이름 (예: `mypie`)
    - 사용자 이름·비밀번호 (나만 아는 비밀번호)
    - 와이파이 (랜선을 쓰면 비워 둬요)
@@ -32,7 +32,7 @@
    - 시간대 `Asia/Seoul`
 4. SD카드에 굽고 파이에 꽂아 전원을 연결해요. 1~2분 기다려요.
 5. 공유기 관리 화면(보통 `192.168.0.1`)의 연결된 기기 목록에서 파이 IP를 찾아요 (예: `192.168.0.10`).
-   공유기에서 **주소 예약(고정 IP)** 을 해 두면 IP가 바뀌지 않아서 편해요.
+   공유기에서 **주소 예약**(고정 IP)을 해 두면 IP가 바뀌지 않아서 편해요.
 6. PC에서 접속해요.
    ```bash
    ssh <사용자 이름>@<파이 IP>
@@ -42,23 +42,23 @@
 
 파이에서:
 ```bash
-python3 --version                    # 3.11 이상이면 돼요 (Raspberry Pi OS Bookworm은 3.11)
+python3 --version                    # 3.11 이상이면 돼요
 sudo apt update && sudo apt install -y git
 timedatectl                          # 시간대가 Asia/Seoul인지 확인
 ```
-시간대가 다르면 `sudo timedatectl set-timezone Asia/Seoul` 로 바꿔요. 매매 시각(09:00 등)이 한국 시간 기준이에요.
+시간대가 다르면 `sudo timedatectl set-timezone Asia/Seoul`로 바꿔요. 매매 시각(09:00 등)이 한국 시간 기준이에요.
 
 ## 3. 코드 받고 설치
 
 ```bash
-git clone <저장소 주소> ~/My_Pie         # 예: git clone https://github.com/<아이디>/My_Pie.git ~/My_Pie
+git clone https://github.com/jounghyun/LiarsPie.git ~/My_Pie
 cd ~/My_Pie
 bash deploy/install.sh                   # 서비스 3개 등록 + 시작 (코인 봇 · 주식 봇 · 웹페이지)
 sudo loginctl enable-linger $USER        # 부팅할 때 자동으로 켜지게 (한 번만)
 ```
-- 폴더 이름은 꼭 `~/My_Pie`여야 해요 (서비스가 이 폴더에서 돌아요). 그래서 `git clone` 끝에 `~/My_Pie`를 붙여요.
-- 압축 파일로 받았다면, 풀면 생기는 폴더(예: `저장소이름-main`)를 `~/My_Pie`로 이름을 바꾸고 `cd ~/My_Pie`부터 하면 돼요.
-- `config.toml`은 처음 실행할 때 `config.example.toml`을 복사해서 자동으로 만들어져요.
+- 저장소 이름은 LiarsPie지만, 받는 폴더는 꼭 `~/My_Pie`여야 해요. 서비스가 이 폴더에서 돌아가서 `git clone` 끝에 `~/My_Pie`를 붙였어요.
+- 압축 파일(ZIP)로 받았다면, 풀면 생기는 `LiarsPie-main` 폴더를 `~/My_Pie`로 이름을 바꾸고 `cd ~/My_Pie`부터 하면 돼요.
+- 설정 파일 `config.toml`은 처음 켤 때 `config.example.toml`을 복사해서 자동으로 만들어져요.
 - 잘 됐는지 확인:
   ```bash
   systemctl --user status mypie-bot mypie-web mypie-stock     # 셋 다 active (running)이면 정상
@@ -66,9 +66,9 @@ sudo loginctl enable-linger $USER        # 부팅할 때 자동으로 켜지게 
 
 ## 4. 웹페이지 열기
 
-- 같은 공유기에 연결된 PC·폰 브라우저에서 `http://<파이 IP>:8000` 에 들어가요.
+- 같은 공유기에 연결된 PC·폰 브라우저에서 `http://<파이 IP>:8000`에 들어가요.
 - 처음에는 **모의투자**(가상 돈 100만 원)로 시작해요. 키가 없어도 돼요.
-- 오른쪽 위 **⚙️ 톱니바퀴에 빨간 점**이 있으면 아직 **기본 PIN 0000**이라는 뜻이에요. ⚙️ → **🔒 PIN** 에서 바로 바꿔 주세요.
+- 오른쪽 위 **⚙️ 톱니바퀴에 빨간 점**이 있으면 아직 **기본 PIN 0000**이라는 뜻이에요. **⚙️ → 🔒 PIN**에서 바로 바꿔 주세요.
   PIN은 계좌 만들기·이체·전략 바꾸기·실거래 전환·텔레그램 설정에 써요.
 - 코인 계좌를 하나 만들어 보세요: **계좌 → ＋ 코인 계좌 만들기** (금고에서 넣을 돈, 전략 고르기, PIN).
 
@@ -76,8 +76,8 @@ sudo loginctl enable-linger $USER        # 부팅할 때 자동으로 켜지게 
 
 연결하면 웹페이지 **로그인 코드**, 매매·오류 **알림**, 아침 리포트, 명령어(`/상태`, `/기록`, `/주식`, `/재부팅`), **SSH 로그인 감시**가 돼요.
 
-1. 텔레그램에서 **@BotFather** 를 찾아 `/newbot` 을 보내요. 이름과 아이디(끝이 `bot`)를 정하면 **봇 토큰**을 줘요.
-2. 웹페이지 **⚙️ → ✈️ 텔레그램** 에 토큰과 PIN을 넣고 **연결 시작**을 눌러요.
+1. 텔레그램에서 **@BotFather**를 찾아 `/newbot`을 보내요. 이름과 아이디(끝이 `bot`)를 정하면 **봇 토큰**을 줘요.
+2. 웹페이지 **⚙️ → ✈️ 텔레그램**에 토큰과 PIN을 넣고 **연결 시작**을 눌러요.
 3. 화면에 나온 내 봇을 텔레그램에서 찾아 **아무 메시지나** 보내면 자동으로 연결돼요.
 
 - 연결하면 웹페이지에 들어올 때 로그인 코드를 물어요 (기본 2자리, ⚙️에서 2~8자리로 바꿀 수 있어요). 연결하기 전에는 묻지 않고 바로 열려요.
@@ -97,9 +97,14 @@ sudo loginctl enable-linger $USER        # 부팅할 때 자동으로 켜지게 
 4. 업비트 원화는 **금고**로 들어오고, **코인 계좌로 옮긴 돈만** 사고팔아요. 자세한 건 README의 [실거래 시작하기](README.md#실거래-시작하기)를 보세요.
 
 ### 토스증권 (국내 주식)
-1. README의 [주식 자동매매](README.md#주식-자동매매-토스증권)에 있는 연결 방법대로 키를 발급해요 (허용 IP 등록, 투자자지시 거래소 **통합(SOR)**).
-2. 파이에서 `python3 -m mypie.toss` 로 등록해요.
-3. 웹페이지 **⚙️ → 📈 주식 계좌** → **실거래**.
+1. 키 발급: README의 [주식 자동매매](README.md#주식-자동매매-토스증권) → **연결하는 법**대로 해요.
+   - 허용 IP에 **집 공인 IP**를 넣어요.
+   - 토스증권 앱에서 투자자지시 거래소를 **통합**(SOR)으로 해 둬요. 아니면 주문이 거절돼요.
+2. 파이에서 키를 등록해요.
+   ```bash
+   cd ~/My_Pie && python3 -m mypie.toss
+   ```
+3. 웹페이지 **⚙️ → 📈 주식 계좌** → **실거래** → 체크 → PIN → **계좌 바꾸기**.
 
 > ⚠️ 토스증권 API에는 모의투자 서버가 없어서, 실거래로 바꾸면 첫 주문부터 진짜예요. 처음엔 작은 금액으로 확인하세요.
 
@@ -109,12 +114,17 @@ sudo loginctl enable-linger $USER        # 부팅할 때 자동으로 켜지게 
 ```bash
 cd ~/My_Pie && git pull && bash deploy/install.sh
 ```
-설정(`config.toml`)·키(`.env`)·기록(`data/`)은 그대로 남아요.
+- 설정(`config.toml`)·키(`.env`)·기록(`data/`)은 그대로 남아요.
+- 압축 파일로 설치했다면, 새 압축 파일을 풀어서 `~/My_Pie`에 덮어쓰고 `bash deploy/install.sh`를 해요.
 
-Windows PC에서 코드를 고쳐서 바로 올릴 때는, 처음 한 번 `deploy.local.example.ps1`을 `deploy.local.ps1`로 복사해서 파이 주소·아이디를 적고:
+<details>
+<summary>코드를 직접 고치는 분 (Windows PC에서 파이로 올리기)</summary>
+
+처음 한 번 `deploy.local.example.ps1`을 `deploy.local.ps1`로 복사해서 파이 주소·아이디를 적고:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\deploy.ps1
 ```
+</details>
 
 ## 8. 집 밖에서 보기 (선택)
 
@@ -123,7 +133,7 @@ powershell -ExecutionPolicy Bypass -File .\deploy.ps1
 1. **주소 예약**: 파이 IP가 바뀌지 않게 공유기에서 고정해요 (1번에서 했으면 넘어가요).
 2. **DDNS**: 집 공인 IP는 가끔 바뀌어요. DDNS를 켜면 `내이름.iptime.org` 같은 바뀌지 않는 주소가 생겨요. (ipTIME: 고급 설정 → 특수기능 → DDNS 설정)
 3. **포트포워딩**: 밖에서 들어온 요청을 파이로 보내요. 내부 IP는 파이 IP, 내부 포트는 **8000**, 외부 포트는 8000이 아닌 아무 번호(예: 18000)가 덜 찔려요. (ipTIME: 고급 설정 → NAT/라우터 관리 → 포트포워드 설정)
-4. 밖에서 `http://내이름.iptime.org:<외부 포트>` 로 들어가요.
+4. 밖에서 `http://내이름.iptime.org:<외부 포트>`로 들어가요.
 
 > ⚠️ 포트를 열기 전에 꼭 하세요.
 > - **텔레그램 연결**: 연결하지 않으면 로그인 코드 없이 **누구나** 화면을 볼 수 있어요.
@@ -133,7 +143,7 @@ powershell -ExecutionPolicy Bypass -File .\deploy.ps1
 
 ## 9. 보안 체크리스트
 
-- [ ] **PIN 0000** 을 내 PIN으로 바꾸기 (⚙️ → 🔒 PIN)
+- [ ] **PIN 0000**을 내 PIN으로 바꾸기 (⚙️ → 🔒 PIN)
 - [ ] 텔레그램을 연결해서 **로그인 코드** 켜 두기
 - [ ] API 키에 **출금 권한을 주지 않기**, 허용 IP 등록하기
 - [ ] SSH는 **공개 키 로그인**을 쓰고 비밀번호 로그인은 끄기 (`/etc/ssh/sshd_config`에서 `PasswordAuthentication no`)
@@ -145,12 +155,13 @@ powershell -ExecutionPolicy Bypass -File .\deploy.ps1
 | 증상 | 해 볼 것 |
 |---|---|
 | 웹페이지가 안 열려요 | `systemctl --user status mypie-web` · 파이 IP가 바뀌지 않았는지 공유기에서 확인 |
-| 봇이 멈춘 것 같아요 | `journalctl --user-unit mypie-bot -f` 로 로그 보기 (주식은 `mypie-stock`) |
+| 봇이 멈춘 것 같아요 | `journalctl --user-unit mypie-bot -f`로 로그 보기 (주식은 `mypie-stock`) |
+| 서비스가 안 켜져요 | 폴더가 `~/My_Pie`인지 확인 (다른 이름이면 서비스가 못 찾아요) |
 | SSH 접속을 끊으면 봇도 멈춰요 | `sudo loginctl enable-linger $USER` |
 | 실거래 주문이 IP 때문에 거절돼요 | 집 공인 IP가 바뀌었을 수 있어요 (화면에 경고가 떠요). 업비트·토스증권 허용 IP를 다시 등록 |
 | 화면에 "전압 부족" | 정격 어댑터와 짧고 굵은 케이블로 바꾸기 |
 | 텔레그램이 안 돼서 로그인을 못 해요 | 파이에서 `python3 -m mypie.telegram --code` (코드 출력) 또는 `--off` (연결 끊기) |
-| PIN을 잊었어요 | 파이에서 `python3 -m mypie.pin` 으로 새로 정하기 |
+| PIN을 잊었어요 | 파이에서 `python3 -m mypie.pin`으로 새로 정하기 |
 | SSH 로그인 감시 알림이 안 와요 | SSH 기록을 읽으려면 사용자가 `adm` 그룹이어야 해요: `sudo usermod -aG adm $USER` 후 다시 로그인 |
 | 모의투자를 처음부터 다시 | 서비스를 멈추고 `data/mypie.db`(코인)·`data/stock.db`(주식)를 지운 뒤 다시 시작 (PIN도 0000으로 돌아가요) |
 
