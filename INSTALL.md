@@ -56,7 +56,8 @@ cd ~/My_Pie
 bash deploy/install.sh                   # 서비스 3개 등록 + 시작 (코인 봇 · 주식 봇 · 웹페이지)
 sudo loginctl enable-linger $USER        # 부팅할 때 자동으로 켜지게 (한 번만)
 ```
-- 압축 파일로 받았다면 `~/My_Pie`에 풀고 `cd ~/My_Pie`부터 하면 돼요.
+- 폴더 이름은 꼭 `~/My_Pie`여야 해요 (서비스가 이 폴더에서 돌아요). 그래서 `git clone` 끝에 `~/My_Pie`를 붙여요.
+- 압축 파일로 받았다면, 풀면 생기는 폴더(예: `저장소이름-main`)를 `~/My_Pie`로 이름을 바꾸고 `cd ~/My_Pie`부터 하면 돼요.
 - `config.toml`은 처음 실행할 때 `config.example.toml`을 복사해서 자동으로 만들어져요.
 - 잘 됐는지 확인:
   ```bash
