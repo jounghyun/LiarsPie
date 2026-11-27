@@ -53,6 +53,11 @@
   .lead { font-size: 18px; color: var(--muted); margin: 0 0 14px; }
   .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
   .pills a { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--text); }
+  .cta { display: block; text-align: center; margin: 16px 0 4px; padding: 14px 18px; border-radius: 14px; background: var(--brand); color: #fff;
+         font-size: 18px; font-weight: 750; box-shadow: var(--shadow); }
+  .cta:hover { text-decoration: none; filter: brightness(1.05); }
+  .toc-install { display: block; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 700; text-align: center; }
+  .toc-install:hover { text-decoration: none; filter: brightness(1.05); }
   .note { background: var(--soft); border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 15px; }
   .warn { background: var(--warn-bg); border-left: 4px solid var(--warn); border-radius: 0; padding: 12px 14px; margin: 12px 0; font-size: 15px; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 12px 0; }
@@ -111,6 +116,7 @@
   <nav class="toc" id="toc" aria-label="목차">
     <div class="brand"><span class="logo">🐜</span>AntLab 설명서
       <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false">목차 ☰</button></div>
+    <a class="toc-install" href="#install">📦 설치하기</a>
     <ol>
       <li><a href="#about">AntLab은 뭔가요</a></li>
       <li><a href="#install">설치하기</a></li>
@@ -144,8 +150,9 @@
       <p class="lead">라즈베리파이에서 24시간 돌아가는 <b>업비트 코인</b>·<b>토스증권 국내 주식</b> 자동매매 봇과, 폰·PC로 보는 모니터링 웹페이지예요.</p>
       <p>정해 둔 전략대로 사고팔고, 과거 데이터로 "그때 이렇게 했다면?"을 계산해서 어떤 전략이 나았는지 보여줘요. 처음엔 <b>모의투자</b>(가상 돈)로 돌려 보고, 준비되면 <b>실거래</b>로 바꿔요.</p>
       <div class="warn">⚠️ <b>투자 조언이 아니에요.</b> 순위와 시뮬레이션은 "과거에 이렇게 했다면?"일 뿐, 앞으로도 그렇게 된다는 보장이 없어요. 실거래는 <b>잃어도 괜찮은 금액</b>으로만 하세요.</div>
+      <a class="cta" href="#install">📦 설치하기 — 처음이면 여기부터</a>
       <div class="pills">
-        <a href="#install">📦 설치하기</a><a href="#screen">🖥️ 화면 둘러보기</a><a href="#research">🔬 연구 탭</a>
+        <a href="#screen">🖥️ 화면 둘러보기</a><a href="#research">🔬 연구 탭</a>
         <a href="#stock">📈 주식 시간</a><a href="#live">🔴 실거래</a><a href="#trouble">🧰 문제 해결</a>
       </div>
     </section>
