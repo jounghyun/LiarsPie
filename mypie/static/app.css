@@ -528,6 +528,44 @@
   .finder-stat small { color: var(--muted); font-size: 12px; }
   .finder-stat b { font-weight: 700; }
   .finder-same { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  /* 연구 탭: ① 고르기 → ② 순위 (finder.js) → ③ 자세히 */
+  .rank-seg { display: inline-flex; gap: 3px; padding: 3px; margin: 2px 0 8px; background: var(--chip); border-radius: 10px; }
+  .rank-seg[hidden] { display: none; }
+  .rank-seg .seg-btn { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 650;
+                       min-height: 0; padding: 5px 12px; border-radius: 8px; cursor: pointer; }
+  .rank-seg .seg-btn[aria-pressed="true"] { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+  .rank-table td.left:nth-child(2) { white-space: normal; min-width: 180px; }
+  .rank-table tbody tr { cursor: pointer; }
+  .rank-table tr.base td { color: var(--muted); }                       /* 바이앤홀드 = 비교 기준선 */
+  .rank-mini { display: none; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  @media (max-width: 560px) {  /* 폰: 순위 · 전략(아래 낙폭·매매 한 줄) · 수익률만 */
+    .rank-table th:nth-child(4), .rank-table th:nth-child(5), .rank-table td:nth-child(4), .rank-table td:nth-child(5) { display: none; }
+    .rank-table td.left:nth-child(2) { min-width: 0; }
+    .rank-mini { display: block; }
+  }
+  .tag.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+  .rank-foot { display: grid; gap: 8px; margin-top: 10px; font-size: 13px; }
+  .rank-foot:empty { display: none; }
+  .rank-found, .rank-find { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--muted); }
+  .rank-find button { flex: none; }
+  .rank-history { font-size: 13px; max-width: 100%; }
+  details.fold-box { margin-top: 10px; }
+  details.fold-box > summary { cursor: pointer; font-weight: 650; font-size: 14px; padding: 4px 0; }
+  details.fold-box > summary small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  details.fold-box > p { font-size: 13.5px; margin: 6px 0; line-height: 1.6; }
+  #guides details.fold-box { margin-top: 0; }
+  #guides details.fold-box > summary { font-size: 16px; }
+  .sim-edit { margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: var(--soft); }
+  /* ➕ 계좌 만들기를 눌렀는데 같은 종목 계좌가 있을 때: 그 계좌 전략 바꾸기 / 새로 만들기 */
+  .sim-ask { margin-top: 8px; padding: 12px; border-radius: 12px; background: var(--brand-soft); display: grid; gap: 8px; }
+  .sim-ask[hidden] { display: none; }
+  .sim-ask .ask-title { margin: 0; font-weight: 650; font-size: 14px; }
+  .sim-ask .ask-opt { display: grid; gap: 2px; text-align: left; width: 100%; padding: 10px 12px; border-radius: 10px;
+                      border: 1px solid var(--line); background: var(--card); color: var(--text); font: inherit; cursor: pointer; min-height: 0; }
+  .sim-ask .ask-opt:hover { border-color: var(--brand); }
+  .sim-ask .ask-opt small { color: var(--muted); font-size: 12px; }
+  .sim-ask > .ghost { justify-self: end; }
+  .sim-edit .simrule { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
   @media (max-width: 560px) { .finder-row { grid-template-columns: 1.6em minmax(0, 1fr); } .finder-acts { grid-column: 2; justify-content: flex-start; } }
   /* 살 때 · 팔 때 전략 고르기 (rules.js) */
   .rule { display: grid; gap: 6px; min-width: 0; }

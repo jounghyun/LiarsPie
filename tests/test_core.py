@@ -1180,8 +1180,8 @@ class WebTest(TempDbTest):
         self.assertEqual((sim["days"], sim["detail"]["name"], len(sim["detail"]["close"])), (90, "rsi", 90))
         self.assertEqual(len(sim["results"]), len(STRATEGIES))
         self.assertNotIn("detail", sim["results"][0])
-        self.assertEqual([p["ok"] for p in sim["periods"]], [True, True, True, False, True, True, True])  # 1년은 봉이 모자람
-        self.assertEqual([p["long"] for p in sim["periods"]], [False, False, False, False, True, True, True])  # 3·5·8년은 따로 계산 (봉은 그때 받는다)
+        self.assertEqual([p["ok"] for p in sim["periods"]], [True, True, True, False, False, True, True, True])  # 1·2년은 봉이 모자람
+        self.assertEqual([p["long"] for p in sim["periods"]], [False, False, False, False, False, True, True, True])  # 3·5·8년은 따로 계산 (봉은 그때 받는다)
         self.assertTrue(sim["stale"])                                   # 마지막 봉이 오래전
         self.assertEqual(web.build_simulation(self.path, cfg, "KRW-ETH", "1d", 365, "")["days"], 180)  # 되는 기간 중 가장 긴 것
         long = web.build_simulation(self.path, cfg, "KRW-ETH", "1d", 1095, "")

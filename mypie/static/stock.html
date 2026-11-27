@@ -138,40 +138,59 @@
     </div>
   </section>
 
-  <!-- 전략 시뮬레이션 -->
-  <section class="card" id="sim" data-tab="research">
-    <h2><span class="ico">🥇</span>전략 순위 · 시뮬레이션 <small>과거에 이 종목을 이 전략대로 사고팔았다면?</small></h2>
+  <!-- 연구: ① 고르기 → ② 순위 (전략 + 좋은 조합, finder.js) → ③ 자세히 (시뮬레이션) · 전략 설명은 맨 아래 접어 둔다 -->
+  <section class="card pick-card" id="pick" data-tab="research">
+    <h2><span class="ico">🔬</span>과거에 이렇게 사고팔았다면? <small>고른 조건으로 아래 순위와 자세히 보기가 같이 바뀌어요</small></h2>
     <div class="simbar">
       <label>종목
         <div class="search"><input id="simSearch" placeholder="이름이나 코드" autocomplete="off"><div class="suggest" id="simSuggest" hidden></div></div>
       </label>
       <label>과거 기간<select id="simDays"></select></label>
-      <div class="simrule">전략 (이 기간 순위)<div id="simRule"></div></div>
       <div class="simrule" id="simStop"></div>
     </div>
+  </section>
+
+  <section class="card" id="rankCard" data-tab="research">
+    <h2><span class="ico">🏆</span>순위 <small id="rankSub"></small></h2>
+    <div class="rank-seg" id="rankSeg" hidden></div>
+    <div class="scroll">
+      <table class="rank-table">
+        <thead><tr><th class="left">순위</th><th class="left">전략</th><th>수익률</th><th>최대 낙폭</th><th>매매 · 승률</th></tr></thead>
+        <tbody id="ranks"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="ranksEmpty" hidden></div>
+    <div class="rank-foot" id="rankFoot"></div>
+    <p class="note">줄을 누르면 아래 자세히 보기가 그 전략으로 바뀌어요 · ⚠️ 과거를 계산한 결과라 앞으로도 같다는 보장은 없어요 · 수수료 0.015%, 팔 때 증권거래세 0.2%, 매매마다 호가 한 칸 반영</p>
+  </section>
+
+  <section class="card" id="sim" data-tab="research">
+    <h2><span class="ico">📊</span>자세히 <small id="simTitle"></small></h2>
     <p class="simline" id="simLine">종목을 고르면 계산해요</p>
     <div class="simjob" id="simJob" hidden></div>
     <div class="simtiles" id="simTiles"></div>
     <div class="chart-box" id="simBox"></div>
     <div class="legend" id="simLegend"></div>
-    <h3 class="subhead" id="rankHead">같은 기간 전략 순위</h3>
-    <div class="scroll">
-      <table>
-        <thead><tr><th class="left">순위</th><th class="left">전략</th><th>수익률</th><th>연평균</th><th>최대 낙폭</th><th>승률</th><th>매매</th><th>추이</th></tr></thead>
-        <tbody id="ranks"></tbody>
-      </table>
+    <details class="fold-box" id="simGuide"></details>
+    <div class="tools">
+      <button type="button" class="ghost" id="simEditBtn">✏️ 살 때·팔 때 직접 고르기</button>
+      <button type="button" id="simUse">➕ 이 전략으로 종목 계좌 만들기</button>
     </div>
-    <p class="note">줄을 누르면 위 차트가 그 전략으로 바뀌어요 · ⚠️ "과거에 이렇게 했다면?"을 계산한 결과라 앞으로도 같다는 보장은 없어요 · 수수료 0.015%와 팔 때 증권거래세 0.2% 반영 · 100만 원으로 시작했다고 치고 계산</p>
+    <div class="sim-ask" id="simAsk" hidden></div><!-- 같은 종목 계좌가 있으면: 그 계좌 전략 바꾸기 / 새로 만들기 -->
+
+    <div class="sim-edit" id="simEdit" hidden>
+      <div class="simrule">살 때·팔 때 (이 기간 순위)<div id="simRule"></div></div>
+    </div>
+    <p class="note">100만 원으로 시작했다고 치고 계산했어요 · 그냥 들고 있었다면은 손절선 없이</p>
   </section>
 
-  <!-- 전략 설명 -->
+  <!-- 전략 설명 (접어 둔다) -->
   <section class="card" id="guides" data-tab="research">
-    <h2><span class="ico">📚</span>전략 설명 <small>주식 기준 · 눌러서 펼치기 · 숫자는 거래일(장이 열린 날) 기준</small></h2>
-    <div id="guideList"></div>
+    <details class="fold-box">
+      <summary><span class="ico">📚</span>모든 전략 설명 <small>주식 기준 · 숫자는 거래일(장이 열린 날) 기준</small></summary>
+      <div id="guideList"></div>
+    </details>
   </section>
-
-  <!-- 좋은 조합 찾기: /finder.js가 채운다 -->
-  <section class="card" id="finder" data-tab="research"></section>
 
   <!-- 기록 -->
   <div class="row2" id="history" data-tab="records">
@@ -296,7 +315,6 @@ function renderAll() {
   renderBrief(s);
   renderSlots(s);
   renderPills();
-  Finder.refresh();
   renderTrades(d.trades);
   renderEvents(d.events);
   renderResults(d.results);
@@ -829,6 +847,7 @@ async function refreshSim(auto) {
   const q = S.simSel; if (!q) return;
   if (!auto) S.simTries = 0;
   renderSimControls();
+  Finder.render();  // 순위는 찾아 둔 조합이 있으면 바로 (시뮬레이션을 기다리지 않고)
   const id = S.simSeq = S.simSeq + 1;
   if (!auto) $('simLine').textContent = '파이가 계산하는 중이에요… (처음 고른 종목은 몇 초 걸려요)';
   try {
@@ -864,10 +883,12 @@ function renderSimControls() {
 $('simDays').onchange = () => { S.simSel.days = +$('simDays').value; refreshSim(); };
 function renderSim() {
   renderSimControls();
-  renderRankTable();
+  Finder.render();
+  renderSimGuide();
   const r = S.sim;
   if (!simReady()) {
     $('simLine').textContent = r && r.message ? r.message : '계산하는 중이에요…';
+    $('simTitle').textContent = '';
     $('simTiles').innerHTML = ''; $('simBox').innerHTML = ''; $('simLegend').innerHTML = '';
     return;
   }
@@ -875,9 +896,10 @@ function renderSim() {
   const d = r.detail, res = r.results.find(x => x.name === d.name), hold = r.hold || r.results.find(x => x.name === 'buy_and_hold') || res;
   const period = r.periods.find(p => p.days === r.days);
   const name = S.simSel.name, line = $('simLine'); line.innerHTML = '';
-  // 머리줄: 기간 · 날짜 · 전략 (종목은 위 칸에 있다). 숫자는 아래 표로 (slotnums.js, 코인과 같다)
-  line.append(el('span', { class: 'muted', text: `최근 ${period ? period.label : r.days + '일'} · ${r.from} ~ ${r.to} · ${name} · ` }),
-    el('b', { text: res.label }), r.stop_loss ? el('span', { class: 'muted', text: ` · ${stopText(r.stop_loss)}` }) : '');
+  // 머리: 고른 전략 · 줄: 종목 · 기간 · 날짜. 숫자는 아래 표로 (slotnums.js, 코인과 같다)
+  $('simTitle').textContent = res.label;
+  line.append(el('span', { class: 'muted', text: `${name} · 최근 ${period ? period.label : r.days + '일'} · ${r.from} ~ ${r.to}`
+                                                 + (r.stop_loss ? ` · ${stopText(r.stop_loss)}` : '') }));
   const note = (text, cls) => line.append(el('span', { class: cls || 'sim-note', text }));
   if (r.stale) note('최근 일봉을 받아 오는 중이에요');
   if (r.long && r.computed_at) note(`${r.computed_at.slice(5, 16)}에 따로 계산한 결과예요`);
@@ -949,33 +971,34 @@ function spark(curve) {
                                 fill: 'none', 'stroke-width': 1.5, stroke: curve[curve.length - 1] >= 1 ? 'var(--up)' : 'var(--down)' }));
   return root;
 }
-function renderRankTable() {
-  const body = $('ranks'); body.innerHTML = '';
-  if (!simReady()) { $('rankHead').textContent = '같은 기간 전략 순위'; return; }
-  const r = S.sim, period = r.periods.find(p => p.days === r.days);
-  const usings = slots().filter(x => x.symbol === r.market).map(slotRule);  // 같은 종목 계좌가 여럿이면 모두
-  const count = r.results.filter(v => !v.combo).length;
-  $('rankHead').textContent = `같은 기간(최근 ${period ? period.label : r.days + '일'}) ${count}개 전략 순위 · ${r.rank_by === 'calmar' ? '위험 대비 수익 순' : '수익률 순'}`
-                              + (r.stop_loss ? ` · 모두 ${stopText(r.stop_loss)} 적용` : '');
-  for (const v of r.results) {
-    const g = strat(v.name), tr = el('tr', { title: fmtGuide(g.guide || '') });
-    if (v.name === r.detail.name) tr.className = 'active';
-    const medal = !v.combo && v.rank <= 3;  // 조합 줄은 '이 전략들 사이에 넣으면 몇 위'
-    cell(tr, medal ? MEDALS[v.rank - 1] : v.rank + '위', 'left' + (medal ? ' medal' : ''));
-    const nm = cell(tr, v.label, 'left');
-    if (v.combo) nm.prepend(el('span', { class: 'tag combo', text: '조합' }));
-    if (g.stock_only) nm.append(el('span', { class: 'tagline', text: '주식 전용' }));
-    if (usings.some(u => v.combo ? sameRule(u, S.simSel.rule) : isSimpleRule(u) && u.strategy === v.name))
-      nm.append(el('span', { class: 'tag', text: '사용 중' }));
-    tone(cell(tr, pct(v.total_return * 100, 1)), v.total_return);
-    tone(cell(tr, v.cagr == null ? '-' : pct(v.cagr * 100, 1)), v.cagr);
-    cell(tr, pct(v.mdd * 100, 1), v.mdd < 0 ? 'down' : '');
-    cell(tr, v.win_rate == null ? '-' : Math.round(v.win_rate * 100) + '%');
-    cell(tr, v.trades + '회');
-    cell(tr, '').appendChild(spark(v.curve));
-    if (!v.combo) tr.onclick = () => { S.simSel.rule = normalizeRule({ strategy: v.name }); refreshSim(); $('simLine').scrollIntoView({ block: 'center', behavior: 'smooth' }); };
-    body.append(tr);
-  }
+// ② 순위 카드 (finder.js가 그린다)에 넘겨 주는 것들
+function simCurrent() {  // 지금 자세히 보는 규칙
+  const r = S.sim;
+  if (simReady() && r.detail.name !== 'combo') return normalizeRule({ strategy: r.detail.name });
+  return S.simSel && S.simSel.rule ? normalizeRule(S.simSel.rule) : null;
+}
+function simUsing(rule) {  // 이 종목 계좌(여럿이면 하나라도)가 쓰는 규칙인지
+  const q = S.simSel;
+  return !!q && slots().some(x => x.symbol === q.symbol && sameCombo(slotRule(x), normalizeRule(rule)));
+}
+function simTitle() {  // 순위 카드 머리: 종목 · 기간 · 정렬 · 손절선
+  const q = S.simSel, r = S.sim; if (!q) return '';
+  const period = (S.data.periods || []).find(p => p.days === q.days);
+  return `${q.name} · 최근 ${period ? period.label : q.days + '일'} · ${r && r.rank_by === 'calmar' ? '위험 대비 수익 순' : '수익률 순'}`
+       + (q.stop > 0 ? ` · 모두 ${stopText(q.stop)}` : '');
+}
+function simPickRule(rule) {  // 순위 줄을 누르면 자세히 보기를 그 전략으로
+  S.simSel.rule = normalizeRule(rule);
+  refreshSim();
+  Tabs.reveal($('sim'));
+}
+function renderSimGuide() {  // 자세히 보기의 '이 전략은?' (고른 규칙에 든 전략만)
+  const box = $('simGuide'), rule = simCurrent();
+  if (!rule) { box.hidden = true; return; }
+  const names = [...new Set([...rule.buy, ...rule.sell])].filter(n => strat(n).label);
+  box.hidden = !names.length;
+  box.replaceChildren(el('summary', { text: `💡 이 전략은? (${names.map(n => strat(n).label).join(', ')})` }),
+    ...names.map(n => el('p', {}, el('b', { text: strat(n).label + ' · ' }), fmtGuide(strat(n).description || '') + ' ', el('span', { class: 'muted', text: fmtGuide(strat(n).guide || '') }))));
 }
 
 // ---------- 불러오기 ----------
@@ -984,16 +1007,7 @@ async function refresh() {
   try { S.data = await getJSON('/api/stock/status'); renderAll(); } catch (e) { setBeat('bad', '파이에 연결할 수 없어요'); }
 }
 window.addEventListener('resize', () => { if (S.candles) renderCandles(); drawSim(); if (S.data && S.data.status && S.data.status.account) renderEquity(S.data.equity, S.data.status.account.contributions); });
-// 좋은 조합 찾기 (finder.js): 결과의 📊를 누르면 시뮬레이션 칸이 그 종목·조합으로 (가장 긴 기간까지)
-function useCombo(res, row) {
-  const periods = (S.data.periods || []).filter(p => p.days <= res.years * 365);
-  S.simSel = { symbol: res.market, name: res.name, rule: normalizeRule(row.rule), stop: 0,
-               days: periods.length ? periods[periods.length - 1].days : 365 };
-  $('simSearch').value = res.name;
-  refreshSim();
-  Tabs.reveal($('sim'));
-}
-// 좋은 조합 찾기의 ➕: 같은 종목·조합 계좌가 이미 있으면 그 카드를 펼쳐 보여주고, 없으면 계좌 만들기 칸을 그 조합으로 채운다
+// 자세히 보기의 ➕: 같은 종목·조합 계좌가 이미 있으면 그 카드를 펼쳐 보여주고, 없으면 계좌 만들기 칸을 그 조합으로 채운다
 function createFromCombo(res, row) {
   const x = (S.data.status ? S.data.status.slots : []).find(x => x.symbol === res.market && sameCombo(slotRule(x), row.rule));
   if (x) {
@@ -1016,14 +1030,50 @@ function createFromCombo(res, row) {
   fillAddStrategies();
   Tabs.reveal($('addBox'));
 }
-Finder.init({ onCreate: createFromCombo, kind: 'stock', onUse: useCombo, current: () => S.sel || (S.simSel ? S.simSel.symbol : ''),
-  search: async (q) => (await getJSON('/api/stock/search?q=' + encodeURIComponent(q))).map(s => ({ value: s.symbol, text: `${s.name} (${s.symbol})`, sub: s.market })),
-  markets: () => {
-    const seen = new Map();
-    for (const x of (S.data && S.data.status ? S.data.status.slots : [])) if (!seen.has(x.symbol)) seen.set(x.symbol, x.name);  // 같은 종목 계좌가 둘이면 첫 계좌 이름
-    if (S.simSel && !seen.has(S.simSel.symbol)) seen.set(S.simSel.symbol, S.simSel.name);
-    return [...seen].map(([value, name]) => ({ value, text: `${name} (${value})` }));
-  } });
+// ➕ 이 전략으로 계좌 만들기: 똑같은 계좌가 있으면 그 카드를 보여주고(createFromCombo), 같은 종목 계좌만 있으면 그 계좌 전략을
+// 바꿀지 새로 만들지 물어본다 (바꾸기는 그 계좌의 '전략 바꾸기' 칸을 채워서 열 뿐이고, 실제로는 PIN을 넣고 바꾸기를 눌러야 바뀐다)
+function changeSlotTo(x, rule, q) {
+  toggleCard(x.id, true);
+  S.open = { slot: x.id, kind: 'strategy', rule: normalizeRule(rule), stop: q.stop || 0 };
+  S.flashSlot = { id: x.id, until: Date.now() + 2400 };
+  renderSlots(S.data.status);
+  Tabs.reveal(document.querySelector(`.slot-card[data-slot="${x.id}"]`), 'center');
+  toast(`${x.name} 계좌의 전략 바꾸기 칸을 채웠어요 · PIN을 넣고 바꾸기를 누르면 바뀌어요`, 'info');
+}
+$('simUse').onclick = () => {
+  const q = S.simSel, rule = simCurrent(), box = $('simAsk'); if (!q || !rule) return;
+  const mine = slots().filter(x => x.symbol === q.symbol);
+  const fresh = () => createFromCombo({ market: q.symbol, name: q.name }, { rule });
+  box.hidden = true;
+  if (!mine.length || mine.some(x => sameCombo(slotRule(x), rule))) { fresh(); return; }  // 똑같은 계좌면 그 카드를 보여준다
+  const option = (title, sub, act) => { const b = el('button', { type: 'button', class: 'ask-opt' }, el('b', { text: title }), el('small', { text: sub }));
+                                        b.onclick = () => { box.hidden = true; act(); }; return b; };
+  const close = el('button', { type: 'button', class: 'ghost small', text: '닫기' });
+  close.onclick = () => { box.hidden = true; };
+  box.replaceChildren(el('p', { class: 'ask-title', text: `${q.name} 계좌가 이미 있어요. 어떻게 할까요?` }),
+    ...mine.map(x => option(`🔁 ${x.name} 계좌의 전략을 이걸로 바꾸기`,
+      `지금: ${ruleText(slotRule(x), (n) => strat(n).label)} · 들고 있는 주식은 그대로예요`, () => changeSlotTo(x, rule, q))),
+    option('➕ 새 계좌 따로 만들기', '같은 종목을 이 전략으로 하나 더 굴려요 (금고에서 돈을 넣어서)', fresh), close);
+  box.hidden = false;
+  box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+};
+$('simEditBtn').onclick = () => {  // 살 때·팔 때를 직접 고르는 칸 (평소엔 접어 둔다)
+  const box = $('simEdit'); box.hidden = !box.hidden;
+  $('simEditBtn').textContent = box.hidden ? '✏️ 살 때·팔 때 직접 고르기' : '✏️ 접기';
+};
+// ② 순위 카드 (finder.js): 고른 종목·기간의 전략 순위 + 같은 조건으로 찾아 둔 좋은 조합 상위 5개
+Finder.init({
+  kind: 'stock',
+  sel: () => S.simSel && { market: S.simSel.symbol, tf: '1d', days: S.simSel.days, stop: S.simSel.stop || 0 },
+  sim: () => (simReady() && S.sim.days === S.simSel.days && (S.sim.stop_loss || 0) === (S.simSel.stop || 0) ? S.sim : null),
+  current: simCurrent, using: simUsing, pick: simPickRule, title: simTitle,
+  message: () => (S.sim && S.sim.message) || '종목을 고르면 계산해요',
+  open: (h) => {  // 지난 조합 찾기: 그 종목·기간으로 (손절선은 끈다)
+    S.simSel = { ...(S.simSel || {}), symbol: h.market, name: h.name, days: h.years * 365, stop: 0 };
+    $('simSearch').value = h.name;
+    refreshSim();
+  },
+});
 
 refresh();
 setInterval(refresh, 5000);

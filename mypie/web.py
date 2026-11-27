@@ -187,7 +187,7 @@ SIM_CACHE_SIZE = 12
 _sim_lock = threading.Lock()
 _sim_cache: dict[tuple, list[dict]] = {}
 # 주식 시뮬레이션 기간 (일, 이름). 1년에 거래일은 250일쯤이라 봉 개수는 그만큼 줄여서 센다
-STOCK_SIM_PERIODS = [(30, "1달"), (90, "3달"), (180, "6달"), (365, "1년"), (1095, "3년"), (1825, "5년"), (2920, "8년")]
+STOCK_SIM_PERIODS = [(30, "1달"), (90, "3달"), (180, "6달"), (365, "1년"), (730, "2년"), (1095, "3년"), (1825, "5년"), (2920, "8년")]
 
 
 def build_simulation(db_path: str, cfg: dict, market: str, tf: str, days: int, strategy: str,
@@ -446,7 +446,7 @@ def build_search(main_db: str, stock_db: str, cfg: dict, query: dict) -> dict:
     items = (simulation.load(folder / combosearch.history_file(kind)) or {}).get("items", [])
     chosen = next((r for r in items if r["id"] == first("id")), items[0] if items else None)
     out = {"kind": kind, "job": simjob.read_state(folder), "result": chosen,
-           "history": [{k: r.get(k) for k in ("id", "name", "market", "tf_label", "years", "computed_at", "saved")} for r in items],
+           "history": [{k: r.get(k) for k in ("id", "name", "market", "tf", "tf_label", "years", "computed_at", "saved")} for r in items],
            "years": list(combosearch.YEARS), "max_years": combosearch.MAX_YEARS, "top": combosearch.TOP,
            "recent": combosearch.RECENT, "saved_max": combosearch.SAVED}
     return out
