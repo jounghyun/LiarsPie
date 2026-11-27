@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AntLab 설명서</title>
+<meta name="description" content="라즈베리파이에서 24시간 도는 코인·주식 자동매매 봇 AntLab(개미연구소)의 설치부터 화면, 전략, 실거래까지 자세한 설명서">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐜</text></svg>">
+<style>
+  :root {
+    --bg: #f5f5f9; --card: #ffffff; --soft: #f3f2fa; --text: #17171c; --muted: #6b6b78; --line: #e6e5ee;
+    --brand: #6d4aff; --brand-soft: #efebff; --up: #e0313f; --down: #1f6fe5; --ok: #16a34a; --warn: #b45309; --warn-bg: #fff7e6;
+    --code: #f1f0f7; --shadow: 0 1px 2px rgba(16, 16, 40, .04), 0 6px 20px rgba(16, 16, 40, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e0e13; --card: #17171f; --soft: #1d1c27; --text: #ececf1; --muted: #a2a1b0; --line: #2a2936;
+      --brand: #a38bff; --brand-soft: #24203d; --up: #ff6070; --down: #5c9cff; --ok: #3ad07f; --warn: #f0b04d; --warn-bg: #2b2112;
+      --code: #22212d; --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.75 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif; word-break: keep-all; overflow-wrap: anywhere; }
+  a { color: var(--brand); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .88em; background: var(--code); padding: 1px 6px; border-radius: 6px; }
+  pre { background: var(--code); padding: 12px 14px; border-radius: 12px; overflow-x: auto; font-size: 14px; line-height: 1.6; }
+  pre code { background: none; padding: 0; }
+  h1, h2, h3 { line-height: 1.35; letter-spacing: -0.02em; }
+  h2 { font-size: 26px; margin: 0 0 14px; }
+  h3 { font-size: 19px; margin: 28px 0 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 10px 0 16px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 650; font-size: 13px; background: var(--soft); }
+  .scroll { overflow-x: auto; }
+
+  /* 틀: 왼쪽 목차 + 본문 */
+  .layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1180px; margin: 0 auto; gap: 28px; padding: 0 20px; }
+  nav.toc { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px 0 40px; font-size: 14px; }
+  nav.toc .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; margin-bottom: 18px; }
+  .logo { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 20px; background: linear-gradient(135deg, #fff1c9, #ffc56e); }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+  nav.toc li a { display: block; padding: 5px 10px; border-radius: 8px; color: var(--muted); }
+  nav.toc li a:hover { background: var(--soft); color: var(--text); text-decoration: none; }
+  nav.toc li a.on { background: var(--brand-soft); color: var(--brand); font-weight: 650; }
+  nav.toc .sub a { padding-left: 24px; font-size: 13px; }
+  main { padding: 24px 0 80px; min-width: 0; }
+  section.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 26px 28px; margin: 0 0 20px; box-shadow: var(--shadow); }
+  .hero { background: linear-gradient(135deg, var(--brand-soft), var(--card)); }
+  .hero h1 { font-size: 34px; margin: 6px 0 6px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .hero .logo { width: 52px; height: 52px; font-size: 30px; border-radius: 14px; }
+  .lead { font-size: 18px; color: var(--muted); margin: 0 0 14px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+  .pills a { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--text); }
+  .note { background: var(--soft); border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 15px; }
+  .warn { background: var(--warn-bg); border-left: 4px solid var(--warn); border-radius: 0; padding: 12px 14px; margin: 12px 0; font-size: 15px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 12px 0; }
+  .box { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: var(--card); }
+  .box h4 { margin: 0 0 6px; font-size: 16px; }
+  .box p { margin: 0; font-size: 14.5px; color: var(--muted); }
+  ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 12px 0; }
+  ol.steps > li { counter-increment: step; position: relative; padding: 0 0 14px 46px; }
+  ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%;
+                          background: var(--brand); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 15px; }
+  details.more { border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; margin: 10px 0; background: var(--card); }
+  details.more > summary { cursor: pointer; font-weight: 650; padding: 8px 0; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); vertical-align: 2px; }
+  .up { color: var(--up); } .down { color: var(--down); } .ok { color: var(--ok); } .muted { color: var(--muted); }
+  .kbdbtn { display: inline-block; border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 0 8px; font-size: 14px; white-space: nowrap; }
+
+  /* 화면 예시 그림 (숫자는 모두 예시) */
+  .mock { border: 1px dashed var(--line); border-radius: 16px; padding: 14px; background: var(--bg); margin: 12px 0; font-size: 14px; }
+  .mock .cap { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .m-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .m-row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; }
+  .m-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--soft); border-radius: 12px; padding: 4px; text-align: center; font-weight: 650; font-size: 13px; }
+  .m-tabs span { padding: 6px 0; border-radius: 9px; color: var(--muted); }
+  .m-tabs span.on { background: var(--card); color: var(--text); }
+  .m-chip { display: inline-block; font-size: 12px; font-weight: 650; padding: 1px 9px; border-radius: 999px; background: var(--soft); color: var(--muted); margin-right: 4px; }
+  .m-table { width: 100%; font-size: 13px; margin: 6px 0 0; }
+  .m-table td, .m-table th { padding: 5px 6px; }
+  .m-table td:not(:first-child), .m-table th:not(:first-child) { text-align: right; white-space: nowrap; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; }
+  .flow .box { flex: 1 1 150px; text-align: center; }
+  .flow .arrow { color: var(--muted); font-size: 20px; }
+
+  .menu-btn { display: none; }
+  .top-btn { position: fixed; right: 18px; bottom: 18px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
+             background: var(--card); color: var(--text); font-size: 18px; box-shadow: var(--shadow); cursor: pointer; }
+  footer { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0 0; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); padding: 0 14px; gap: 0; }
+    nav.toc { position: static; height: auto; padding: 14px 0 0; }
+    nav.toc > ol { display: none; }
+    nav.toc.open > ol { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px; margin-bottom: 10px; }
+    .menu-btn { display: inline-block; margin-left: auto; border: 1px solid var(--line); background: var(--card); color: var(--text);
+                border-radius: 10px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+    nav.toc .brand { margin-bottom: 10px; }
+    main { padding-top: 6px; }
+    section.card { padding: 20px 16px; border-radius: 16px; }
+    .hero h1 { font-size: 27px; }
+    h2 { font-size: 22px; }
+  }
+  @media print { nav.toc, .top-btn { display: none; } .layout { display: block; } section.card { box-shadow: none; break-inside: avoid-page; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="목차">
+    <div class="brand"><span class="logo">🐜</span>AntLab 설명서
+      <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false">목차 ☰</button></div>
+    <ol>
+      <li><a href="#about">AntLab은 뭔가요</a></li>
+      <li><a href="#install">설치하기</a></li>
+      <li class="sub"><a href="#install-first">처음 켜고 할 일</a></li>
+      <li><a href="#screen">화면 둘러보기</a></li>
+      <li><a href="#vault">금고와 계좌</a></li>
+      <li><a href="#card">계좌 카드 읽는 법</a></li>
+      <li><a href="#strategies">전략 17가지</a></li>
+      <li><a href="#combo">살 때·팔 때 조합과 손절선</a></li>
+      <li><a href="#research">연구 탭 (시뮬레이션)</a></li>
+      <li class="sub"><a href="#finder">좋은 조합 찾기</a></li>
+      <li><a href="#coin">코인은 이렇게 움직여요</a></li>
+      <li><a href="#stock">주식은 이렇게 움직여요</a></li>
+      <li><a href="#live">실거래 시작하기</a></li>
+      <li class="sub"><a href="#upbit-key">업비트 키 받기</a></li>
+      <li class="sub"><a href="#toss-key">토스증권 키 받기</a></li>
+      <li><a href="#safety">안전장치</a></li>
+      <li><a href="#telegram">텔레그램</a></li>
+      <li><a href="#settings">⚙️ 설정과 🎨 테마</a></li>
+      <li><a href="#pi">라즈베리파이 상태</a></li>
+      <li><a href="#outside">집 밖에서 보기</a></li>
+      <li><a href="#trouble">문제가 생기면</a></li>
+      <li><a href="#commands">자주 쓰는 명령</a></li>
+      <li><a href="#words">용어 풀이</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section class="card hero" id="top">
+      <h1><span class="logo">🐜</span>AntLab <small class="muted" style="font-size:20px">개미연구소</small></h1>
+      <p class="lead">라즈베리파이에서 24시간 돌아가는 <b>업비트 코인</b>·<b>토스증권 국내 주식</b> 자동매매 봇과, 폰·PC로 보는 모니터링 웹페이지예요.</p>
+      <p>정해 둔 전략대로 사고팔고, 과거 데이터로 "그때 이렇게 했다면?"을 계산해서 어떤 전략이 나았는지 보여줘요. 처음엔 <b>모의투자</b>(가상 돈)로 돌려 보고, 준비되면 <b>실거래</b>로 바꿔요.</p>
+      <div class="warn">⚠️ <b>투자 조언이 아니에요.</b> 순위와 시뮬레이션은 "과거에 이렇게 했다면?"일 뿐, 앞으로도 그렇게 된다는 보장이 없어요. 실거래는 <b>잃어도 괜찮은 금액</b>으로만 하세요.</div>
+      <div class="pills">
+        <a href="#install">📦 설치하기</a><a href="#screen">🖥️ 화면 둘러보기</a><a href="#research">🔬 연구 탭</a>
+        <a href="#stock">📈 주식 시간</a><a href="#live">🔴 실거래</a><a href="#trouble">🧰 문제 해결</a>
+      </div>
+    </section>
+
+    <!-- ========================= 1 ========================= -->
+    <section class="card" id="about">
+      <h2>AntLab은 뭔가요</h2>
+      <div class="flow">
+        <div class="box"><h4>🍓 라즈베리파이</h4><p>봇 2개(코인·주식)와 웹페이지가 24시간 돌아요</p></div>
+        <span class="arrow">⇄</span>
+        <div class="box"><h4>🏦 거래소</h4><p>업비트(코인) · 토스증권(주식)에 시세를 묻고 주문을 내요</p></div>
+        <span class="arrow">⇄</span>
+        <div class="box"><h4>📱 나</h4><p>웹페이지로 보고 고르고, 텔레그램으로 알림을 받아요</p></div>
+      </div>
+      <h3>할 수 있는 것</h3>
+      <ul>
+        <li><b>금고 + 계좌</b>: 돈을 쉬는 돈(금고)과 여러 계좌로 나눠요. 계좌마다 <b>종목 + 전략 + 손절선</b>이 있고 자기 돈으로만 따로 사고팔아요. 같은 종목도 전략을 달리해 여러 계좌로 굴릴 수 있어요.</li>
+        <li><b>전략 17가지</b>: 유명한 매매 전략 13가지(해외 트레이딩뷰 인기 1·2위 지표 포함)와 주식 전용 4가지. 종목마다 매일 과거 데이터로 순위를 매겨요.</li>
+        <li><b>살 때·팔 때 조합</b>: 살 때와 팔 때 전략을 따로 고르고, 두 전략을 "그리고/또는"으로 묶을 수 있어요.</li>
+        <li><b>연구 탭</b>: 종목·기간을 고르면 전략 순위, 파이가 찾아 준 좋은 조합, 과거 매매 차트를 한 화면에서 봐요 (최대 8년).</li>
+        <li><b>주식은 거래되는 시간 전체</b>에서 사고팔아요 (넥스트레이드 종목은 08:00~20:00).</li>
+        <li><b>텔레그램</b>: 로그인 코드, 매매·오류 알림, 아침·마감 리포트, 명령어, 키 만료 알림, SSH 로그인 감시.</li>
+        <li>정전·재부팅·통신 끊김에도 <b>멈추지 않고</b>, 다시 켜지면 거래소에 주문 결과를 물어서 이어서 해요.</li>
+        <li>외부 라이브러리 없이 파이에 기본으로 있는 Python 3만 써요 (메모리 약 50MB).</li>
+      </ul>
+    </section>
+
+    <!-- ========================= 2 ========================= -->
+    <section class="card" id="install">
+      <h2>설치하기</h2>
+      <h3>준비물</h3>
+      <div class="scroll"><table>
+        <tr><th>준비물</th><th>설명</th></tr>
+        <tr><td>라즈베리파이</td><td>3B 이상 (3B·3B+·4·5). 3B에서 만들고 시험했어요</td></tr>
+        <tr><td>microSD 카드</td><td>16GB 이상</td></tr>
+        <tr><td>정격 전원 어댑터</td><td>3B·3B+는 5V 2.5A, 4는 5V 3A, 5는 5V 5A. 전압이 모자라면 SD카드가 깨질 수 있어요</td></tr>
+        <tr><td>인터넷</td><td>공유기에 <b>랜선</b> 연결을 권해요 (와이파이도 돼요)</td></tr>
+        <tr><td>PC</td><td>SD카드 굽기와 처음 접속용</td></tr>
+        <tr><td>텔레그램 (선택)</td><td>로그인 코드·매매 알림을 받을 때</td></tr>
+      </table></div>
+
+      <h3>순서</h3>
+      <ol class="steps">
+        <li><b>라즈베리파이 OS 굽기</b><br>PC에 <a href="https://www.raspberrypi.com/software/">Raspberry Pi Imager</a>를 설치하고 <code>Raspberry Pi OS Lite (64-bit)</code>를 골라요. <b>설정 편집</b>에서 호스트 이름, 사용자 이름·비밀번호, (와이파이), <b>SSH 사용</b>, 시간대 <code>Asia/Seoul</code>을 정한 뒤 SD카드에 굽고 파이에 꽂아 켜요.</li>
+        <li><b>파이 주소 찾고 접속하기</b><br>공유기 관리 화면(보통 <code>192.168.0.1</code>)에서 파이 IP를 찾아요 (예: <code>192.168.0.10</code>). <b>주소 예약</b>(고정 IP)을 해 두면 편해요. PC에서:
+          <pre><code>ssh &lt;사용자 이름&gt;@&lt;파이 IP&gt;</code></pre></li>
+        <li><b>필요한 것 확인</b>
+          <pre><code>python3 --version                    # 3.11 이상이면 돼요
+sudo apt update &amp;&amp; sudo apt install -y git
+timedatectl                          # 시간대가 Asia/Seoul인지</code></pre>
+          시간대가 다르면 <code>sudo timedatectl set-timezone Asia/Seoul</code> (매매 시각이 한국 시간 기준이에요).</li>
+        <li><b>코드 받고 설치</b>
+          <pre><code>git clone https://github.com/jounghyun/LiarsPie.git ~/My_Pie
+cd ~/My_Pie
+bash deploy/install.sh                   # 서비스 3개 등록 + 시작 (코인 봇 · 주식 봇 · 웹페이지)
+sudo loginctl enable-linger $USER        # 부팅할 때 자동으로 켜지게 (한 번만)</code></pre>
+          받는 폴더는 꼭 <code>~/My_Pie</code>여야 해요 (서비스가 이 폴더에서 돌아요). 잘 됐는지:
+          <pre><code>systemctl --user status mypie-bot mypie-web mypie-stock   # 셋 다 active (running)이면 정상</code></pre></li>
+        <li><b>웹페이지 열기</b><br>같은 공유기에 연결된 폰·PC 브라우저에서 <code>http://&lt;파이 IP&gt;:8000</code>. 처음에는 <b>모의투자</b>(가상 돈 100만 원)예요. 코인은 키 없이 바로 되고, 주식은 시세를 받으려고 모의투자도 <a href="#toss-key">토스증권 키</a>가 필요해요.</li>
+      </ol>
+
+      <h3 id="install-first">처음 켜고 할 일</h3>
+      <ol class="steps">
+        <li><b>PIN 바꾸기</b>: 오른쪽 위 ⚙️에 빨간 점이 있으면 아직 기본 PIN <code>0000</code>이에요. <span class="kbdbtn">⚙️ → 🔒 PIN</span>에서 바꿔요. PIN은 계좌 만들기·이체·전략 바꾸기·실거래 전환·텔레그램 설정·키 넣기에 써요.</li>
+        <li><b>텔레그램 연결</b> (추천): <a href="#telegram">텔레그램</a>을 보세요. 연결하면 웹페이지에 들어올 때 로그인 코드를 물어서 안전해져요.</li>
+        <li><b>계좌 하나 만들어 보기</b>: 홈 탭 <span class="kbdbtn">＋ 코인 계좌 만들기</span> → 종목·판단 주기·전략·넣을 돈·PIN. 아니면 <a href="#research">연구 탭</a>에서 마음에 드는 전략을 찾아 <span class="kbdbtn">➕ 이 전략으로 계좌 만들기</span>.</li>
+        <li><b>(선택) IP 막기 버튼 준비</b>: 텔레그램 SSH 알림의 🚫 IP 막기를 쓰려면 파이에서 한 번만:
+          <pre><code>sudo bash ~/My_Pie/deploy/firewall-setup.sh</code></pre></li>
+      </ol>
+
+      <h3>업데이트</h3>
+      <pre><code>cd ~/My_Pie &amp;&amp; git pull &amp;&amp; bash deploy/install.sh</code></pre>
+      <p>설정(<code>config.toml</code>)·키(<code>.env</code>)·기록(<code>data/</code>)은 그대로 남아요.</p>
+      <details class="more"><summary>지우고 싶을 때</summary>
+        <pre><code>systemctl --user disable --now mypie-bot mypie-web mypie-stock
+rm ~/.config/systemd/user/mypie-*.service
+rm -rf ~/My_Pie        # 키(.env)와 기록(data/)도 같이 지워져요</code></pre>
+      </details>
+    </section>
+
+    <!-- ========================= 3 ========================= -->
+    <section class="card" id="screen">
+      <h2>화면 둘러보기</h2>
+      <p>코인 화면과 주식 화면이 같은 구조예요. 맨 위에서 <b>🪙 코인 / 📈 주식</b>을 바꾸고, 그 아래 <b>탭 4개</b>로 나뉘어요. 고른 탭은 그 기기에 기억해요.</p>
+      <div class="mock">
+        <div class="cap">화면 위쪽 (예시)</div>
+        <div class="m-card">
+          <div class="m-row"><b>🐜 AntLab</b><span><span class="m-chip">🪙 코인</span><span class="m-chip">📈 주식</span></span></div>
+          <div class="m-row"><span><span class="m-chip" style="color:var(--up)">🔴 실거래</span><span class="m-chip">📦 BTC · ETH</span></span><span>🎨 ⚙️</span></div>
+          <div class="m-tabs" style="margin-top:8px"><span class="on">🏠 홈</span><span>🔬 연구</span><span>🧾 기록</span><span>🍓 파이</span></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="box"><h4>🏠 홈</h4><p>총 자산·수익률·금고, 다음 판단까지 카운트다운, 계좌 한 줄 목록, 가격 차트(매수▲·매도▼), 계좌 카드, 계좌 만들기. 코인은 맨 아래 오늘의 급등·급락, 주식은 장 상태와 처음 설정 안내.</p></div>
+        <div class="box"><h4>🔬 연구</h4><p>① 고르기 → ② 순위(전략 + 좋은 조합) → ③ 자세히(시뮬레이션). 맨 아래 전략 설명. <a href="#research">자세히</a></p></div>
+        <div class="box"><h4>🧾 기록</h4><p>매매 기록·이벤트. 코인은 실현 손익·승률·최대 낙폭, 성과 통계, 손익 캘린더, 자산 추이. 주식은 체결 오차(계획보다 얼마나 불리했나).</p></div>
+        <div class="box"><h4>🍓 파이</h4><p>온도·메모리·저장공간·전력, 코어별 CPU 그래프. <a href="#pi">자세히</a></p></div>
+      </div>
+      <h3>위쪽 칩과 버튼</h3>
+      <ul>
+        <li><b>모의투자 / 실거래</b> 칩: 지금 어느 쪽 돈으로 굴리는지. 실거래면 빨간색이에요.</li>
+        <li><b>🎨</b>: 화면 색 5가지 (1 라이트 퍼플 · 2 다크 트레이딩 · 3 화이트 블루 · 4 차분한 종이 · 5 벚꽃 핑크). 누르는 대로 바뀌고 폰·PC마다 따로 기억해요.</li>
+        <li><b>⚙️</b>: 텔레그램, 모의투자/실거래 전환, 거래소 키, PIN. <a href="#settings">자세히</a></li>
+        <li>코인 화면 위 숫자 칩(예: 📦 BTC · ETH)은 지금 계좌가 있는 코인이에요. 주식은 장 상태(예: 장 마감 · 애프터마켓 ~20:00)가 보여요.</li>
+      </ul>
+    </section>
+
+    <!-- ========================= 4 ========================= -->
+    <section class="card" id="vault">
+      <h2>금고와 계좌</h2>
+      <p>코인과 주식이 같은 방식이에요. 실제 거래소 계좌(업비트, 토스증권)는 하나지만, 장부로 <b>금고</b>와 <b>계좌</b> 여러 개로 나눠 써요.</p>
+      <div class="flow">
+        <div class="box"><h4>🏦 금고</h4><p>쉬는 돈. 입금하면 여기로 들어와요. 봇은 이 돈을 쓰지 않아요</p></div>
+        <span class="arrow">→ 넣기 →</span>
+        <div class="box"><h4>📦 계좌 ①</h4><p>비트코인 · 4시간봉 · MACD 그리고 모멘텀</p></div>
+        <div class="box"><h4>📦 계좌 ②</h4><p>비트코인 2 · 일봉 · 터틀 트레이딩 · 손절 −10%</p></div>
+      </div>
+      <ul>
+        <li><b>계좌</b> = 종목 하나 + 전략(또는 조합) + 손절선(선택). 코인은 <b>판단 주기</b>(일봉·4시간·1시간·15분)도 골라요.</li>
+        <li>계좌는 <b>자기 돈으로만</b> 사고, <b>팔면 그 돈은 계좌에 남아요</b> (금고로 가지 않아요). 다른 계좌 돈은 안 써요.</li>
+        <li>같은 종목도 전략을 달리해 여러 개 만들 수 있어요 ('비트코인', '비트코인 2'처럼 이름이 붙어요). 코인 계좌는 최대 20개.</li>
+        <li>돈이 없는 계좌는 사지 않고 <b>지켜보기만</b> 해요 (계획·순위는 계속 보여줘요).</li>
+        <li>수익률은 "넣은 돈 합계" 기준이라 입출금·이체를 해도 틀어지지 않아요.</li>
+      </ul>
+      <h3>계좌 카드에서 할 수 있는 것 (모두 PIN 필요)</h3>
+      <div class="scroll"><table>
+        <tr><th>버튼</th><th>하는 일</th></tr>
+        <tr><td>🏦→ 넣기 / →🏦 빼기</td><td>금고와 계좌 사이에 돈을 옮겨요 (금액 또는 '전부'). 넣어도 바로 사지 않고 <b>전략이 매수 신호를 낼 때</b> 사요.</td></tr>
+        <tr><td>전략 바꾸기</td><td>전략·손절선(코인은 판단 주기도)을 바꿔요. <b>들고 있는 건 팔지 않고</b> 새 전략이 이어서 판단해요.</td></tr>
+        <tr><td>팔고 빼기</td><td>전부 팔고, 다 팔린 뒤 판 돈과 남은 돈을 금고로 빼요. 계좌는 <b>0원 지켜보기</b>로 남아요. 다 팔리기 전에는 🧹 표시가 붙고 취소할 수 있어요.</td></tr>
+        <tr><td>지우기</td><td>0원 계좌에만 나와요. 바로 지워요.</td></tr>
+      </table></div>
+      <div class="note"><b>원래 있던 코인·주식 (실거래)</b>: 계좌가 있는 종목이면, 거래소에 원래 있던(또는 직접 산) 만큼을 그 종목의 <b>바이앤홀드 계좌</b>(예: '비트코인 · 원래 있던 코인')로 모아요. 전략이 '그냥 들고 있기'라 팔지 않고, 전략을 바꾸면 새 전략대로 사고팔아요. 계좌가 하나도 없는 종목은 건드리지 않아요.</div>
+      <div class="note"><b>모의투자와 실거래는 금고·계좌가 따로</b>예요. ⚙️에서 바꾸고(코인·주식 따로), 바꿔도 아무것도 팔지 않아요. 모의투자 금고는 100만 원으로 시작하고, 개요의 금고 칸에서 가상 입금·출금을 할 수 있어요.</div>
+    </section>
+
+    <!-- ========================= 5 ========================= -->
+    <section class="card" id="card">
+      <h2>계좌 카드 읽는 법</h2>
+      <p>홈 탭의 계좌 카드는 처음엔 접혀 있어요. 접힌 카드는 이름·주기·현재가·전략 줄과 계좌 금액(수익률)만 보여요. 누르면 펼쳐지고(그 기기에 기억), 차트도 그 종목으로 바뀌어요.</p>
+      <div class="mock">
+        <div class="cap">펼친 계좌 카드 (숫자는 예시)</div>
+        <div class="m-card">
+          <div class="m-row"><b>비트코인 <span class="muted" style="font-weight:400">BTC</span></b><span><span class="m-chip">🟢 보유</span></span></div>
+          <div class="muted" style="font-size:12.5px">⏱ 4시간 · 다음 판단 01:00 · 3시간 40분 뒤</div>
+          <div style="font-size:20px;font-weight:800">92,000,000원 <span class="up" style="font-size:13px">+1.2%</span></div>
+          <div>🧠 살 때 <b class="up">MACD</b> 그리고 <b class="down">모멘텀</b> · 팔 때 <b class="up">MACD</b> 그리고 <b class="up">터틀 트레이딩</b></div>
+          <div class="muted" style="font-size:13px">⏳ 매수 신호를 기다리는 중</div>
+          <div style="background:var(--soft);border-radius:12px;padding:8px 10px;margin-top:8px">
+            <table class="m-table"><tr><th></th><th>이 전략</th><th>그냥 들고 있었다면</th></tr>
+              <tr><td>수익률</td><td class="up"><b>+5.20%</b></td><td class="down">-3.10%</td></tr>
+              <tr><td>손익</td><td class="up"><b>+5,200원</b></td><td class="down">-3,100원</td></tr></table>
+            <div class="up" style="font-weight:650;font-size:13px">그냥 들고 있기보다 8.3%p 더 벌었어요</div>
+            <div class="m-row" style="font-size:13px;border-top:1px solid var(--line);margin-top:6px;padding-top:6px"><span class="muted">계좌 금액</span><b>105,200원</b></div>
+            <div class="m-row" style="font-size:13px"><span class="muted">넣은 돈</span><b>100,000원</b></div>
+            <div class="m-row" style="font-size:13px"><span class="muted">확정 손익 · 3승 1패</span><b class="up">+4,100원</b></div>
+          </div>
+        </div>
+      </div>
+      <ul>
+        <li><b>전략 이름 색</b>: 전략마다 <b>혼자 판단했다면</b> 지금 사자(빨강)인지 팔자(파랑)인지예요. 조합은 조건이 다 맞아야 사요 (예: 'MACD 그리고 모멘텀'에서 모멘텀이 파랑이면 아직 안 사요).</li>
+        <li><b>이 전략 vs 그냥 들고 있었다면</b>: 같은 돈을 같은 때 넣고 사서 그냥 들고만 있었다면 얼마였을지와 나란히 보여주고, 한 줄로 판정해요.</li>
+        <li><b>계좌 금액 / 넣은 돈</b>: 들고 있으면 그 안의 코인·주식, 현금(살 돈), 평가 손익도 나와요.</li>
+        <li><b>확정 손익</b>: 판 매매로 확정된 손익이에요 (수수료·세금 뺀 뒤). 이 계좌의 승패와 번 돈·잃은 돈.</li>
+        <li><b>작은 수익 그래프</b>: 첫 매매부터 이 전략(실선)과 그냥 들고 있었다면(점선).</li>
+        <li><b>주식 카드</b>에는 <span class="tag">KRX·NXT</span> 또는 <span class="tag">KRX</span>가 붙어요 (어느 거래소에서 거래되는지). 펼치면 🕗 줄에 사고파는 시간이 나와요.</li>
+      </ul>
+    </section>
+
+    <!-- ========================= 6 ========================= -->
+    <section class="card" id="strategies">
+      <h2>전략 17가지</h2>
+      <p>코인·주식 공통 13가지 + 주식 전용 4가지예요. 🌍는 해외 최대 차트 커뮤니티 <a href="https://www.tradingview.com/scripts/">TradingView</a>의 역대 인기 순위예요.</p>
+      <div class="scroll"><table>
+        <tr><th>전략</th><th>사는 때</th><th>파는 때</th><th>잘 맞는 장</th></tr>
+        <tr><td><b>변동성 돌파</b></td><td>가격이 오늘 시가 + 어제 변동폭 × 0.5를 넘을 때</td><td>다음 날 시작</td><td>하루 단위 급등</td></tr>
+        <tr><td><b>변동성 돌파 + 이동평균</b></td><td>위와 같되, 어제 종가가 5일 평균 위일 때만</td><td>다음 날 시작</td><td>상승 추세</td></tr>
+        <tr><td><b>이동평균 골든크로스</b></td><td>5일 평균 &gt; 20일 평균</td><td>5일 평균 &lt; 20일 평균</td><td>긴 추세</td></tr>
+        <tr><td><b>RSI 역추세</b></td><td>RSI &lt; 30 (과매도)</td><td>RSI &gt; 70 (과매수)</td><td>박스권</td></tr>
+        <tr><td><b>볼린저 밴드</b></td><td>종가가 밴드 하단 아래</td><td>종가가 중심선 위</td><td>박스권</td></tr>
+        <tr><td><b>MACD</b></td><td>MACD선 &gt; 시그널선</td><td>MACD선 &lt; 시그널선</td><td>추세 전환</td></tr>
+        <tr><td><b>터틀 트레이딩</b></td><td>20일 최고가 돌파</td><td>10일 최저가 이탈</td><td>큰 상승장</td></tr>
+        <tr><td><b>모멘텀</b></td><td>30일 전보다 비쌀 때</td><td>30일 전보다 쌀 때</td><td>추세</td></tr>
+        <tr><td><b>스토캐스틱</b></td><td>%K가 20 아래에서 %D 위로</td><td>%K가 80 위에서 %D 아래로</td><td>박스권</td></tr>
+        <tr><td><b>스퀴즈 모멘텀</b> 🌍1위</td><td>뭉쳤던 가격이 풀리며 오르는 힘이 커질 때</td><td>그 힘이 줄어들 때</td><td>급등 시작</td></tr>
+        <tr><td><b>스마트 머니 (시장 구조)</b> 🌍2위</td><td>종가가 직전 고점을 넘을 때</td><td>종가가 직전 저점을 깰 때</td><td>추세</td></tr>
+        <tr><td><b>슈퍼트렌드</b> 🌍5위</td><td>종가가 ATR×3 위쪽 선을 넘을 때</td><td>종가가 ATR×3 아래쪽 선을 깰 때</td><td>큰 추세</td></tr>
+        <tr><td><b>바이앤홀드 (기준)</b></td><td>처음에 한 번</td><td>안 팖</td><td>비교 기준</td></tr>
+        <tr><th colspan="4">주식 전용</th></tr>
+        <tr><td><b>52주 신고가 돌파</b></td><td>최근 250거래일 최고가를 장중에 넘을 때</td><td>종가가 20거래일 평균 아래</td><td>신고가 추세</td></tr>
+        <tr><td><b>거래량 돌파</b></td><td>거래량이 평소 2배 넘게 터지며 20거래일 최고 종가를 넘을 때</td><td>종가가 10거래일 평균 아래</td><td>재료 급등</td></tr>
+        <tr><td><b>이격도 매매</b></td><td>종가가 20거래일 평균보다 8% 넘게 낮을 때</td><td>평균보다 2% 높아졌을 때</td><td>과한 하락 뒤 반등</td></tr>
+        <tr><td><b>이동평균 정배열</b></td><td>5·20·60·120거래일 평균이 위에서부터 차례로 놓일 때</td><td>5거래일 평균이 20거래일 평균 아래로</td><td>건강한 상승 추세</td></tr>
+      </table></div>
+      <details class="more"><summary>각 전략을 쉽게 풀어보면</summary>
+        <ul>
+          <li><b>변동성 돌파</b>: "오늘 시가 + 어제 움직인 폭의 절반"을 넘으면 오르는 날로 보고 사고, 다음 날 시작에 무조건 팔아요. 큰 하락을 피하기 쉽지만 가짜 돌파가 잦은 횡보장에서는 자주 손해를 봐요. (래리 윌리엄스)</li>
+          <li><b>변동성 돌파 + 이동평균</b>: 위와 같지만 상승 추세(어제 종가가 5일 평균 위)일 때만 사요. 하락장에서는 쉬어서 손실을 줄이는 대신 반등 초입을 놓칠 수 있어요.</li>
+          <li><b>이동평균 골든크로스</b>: 5일 평균이 20일 평균 위면 들고 있다가 아래로 내려가면 팔아요. 큰 추세를 길게 타지만 신호가 늦어요.</li>
+          <li><b>RSI 역추세</b>: 최근 14일 오른 힘과 내린 힘을 0~100으로. 30 아래면 사고 70 위면 팔아요. 계속 떨어지는 장에서는 손실이 커질 수 있어요.</li>
+          <li><b>볼린저 밴드</b>: 20일 평균 위아래로 평소 흔들리는 폭만큼 띠를 그려서, 띠 아래로 떨어지면 사고 평균선 위로 오면 팔아요. 박스권에 강해요.</li>
+          <li><b>MACD</b>: 12일 평균과 26일 평균의 차이가 그 차이의 9일 평균보다 크면 들고 있어요. 전환을 빨리 잡지만 횡보장에선 수수료가 쌓여요.</li>
+          <li><b>터틀 트레이딩</b>: 20일 최고가를 넘으면 사고 10일 최저가를 깨면 팔아요. 작게 자주 잃고 가끔 크게 버는 구조예요.</li>
+          <li><b>모멘텀</b>: 오늘 가격이 30일 전보다 높으면 들고, 낮으면 팔아요.</li>
+          <li><b>스토캐스틱</b>: 최근 14일 가격 범위에서 지금 위치를 0~100으로 봐요. 바닥권에서 올라서면 사고 꼭대기권에서 꺾이면 팔아요.</li>
+          <li><b>스퀴즈 모멘텀</b>: 가격이 좁게 갇혀 힘을 모으다가 풀리면서 오르는 힘이 커지면 사요. 터지는 움직임을 잘 잡지만 일찍 팔 때가 많아요.</li>
+          <li><b>스마트 머니 (시장 구조)</b>: 양옆 5일보다 높은 꼭짓점을 고점, 낮은 바닥을 저점으로 잡아, 고점을 넘으면 사고 저점을 깨면 팔아요.</li>
+          <li><b>슈퍼트렌드</b>: 평균 흔들림(ATR)의 3배만큼 떨어진 곳에 선을 긋고, 그 선을 넘나들 때 사고팔아요. 큰 추세에 강해요.</li>
+          <li><b>바이앤홀드</b>: 판단 없이 사서 계속 들고 있어요. 다른 전략이 "그냥 들고 있기"보다 나은지 보는 기준이에요.</li>
+        </ul>
+      </details>
+      <div class="note"><b>순위는 이렇게 매겨요</b>: 하루 한 번 계좌의 종목·주기마다 전략을 전부 과거 데이터로 굴려 봐요 (백테스트). 코인은 수수료 0.05%, 주식은 수수료 0.015% + 팔 때 증권거래세 0.2% + <b>매매마다 호가 한 칸</b>을 반영해요. 전략 고르는 칸의 목록이 이 순위대로 나와요.</div>
+    </section>
+
+    <!-- ========================= 7 ========================= -->
+    <section class="card" id="combo">
+      <h2>살 때·팔 때 조합과 손절선</h2>
+      <h3>조합</h3>
+      <p>계좌마다 <b>살 때</b>와 <b>팔 때</b>를 따로 골라요. 한쪽에 전략을 하나 또는 둘까지 넣을 수 있어요.</p>
+      <div class="grid2">
+        <div class="box"><h4>A</h4><p>전략 하나 (살 때·팔 때가 같으면 그 전략 그대로)</p></div>
+        <div class="box"><h4>A 그리고 B</h4><p>둘 다 신호가 나야</p></div>
+        <div class="box"><h4>A 또는 B</h4><p>하나라도 신호가 나면</p></div>
+      </div>
+      <ul>
+        <li>전략 칸에서 <span class="kbdbtn">＋ 하나 더</span>로 두 번째 전략을 넣고 가운데 <b>그리고/또는</b>을 골라요. <span class="kbdbtn">✕</span>로 다시 하나로.</li>
+        <li><b>안 들고 있을 때는 살 때 쪽만</b>, <b>들고 있을 때는 팔 때 쪽만</b> 봐요.</li>
+        <li><b>사는 건 새 신호일 때만</b>: 살 때 쪽이 '안 삼 → 삼'으로 바뀐 때 사요. 그래서 조합으로 바꾸면 새 매수 신호를 기다려요.</li>
+        <li><b>파는 건 상태로</b>: 팔 때 쪽이 '안 들고 있음'이면 팔아요 ("그리고"면 둘 다, "또는"이면 하나라도).</li>
+        <li>한 봉 시작에 판 계좌는 그 봉 시작에 다시 사지 않아요 (사고팔기만 반복하지 않게).</li>
+      </ul>
+      <h3>손절선 (선택, 1~50%)</h3>
+      <ul>
+        <li>산 값(수수료 포함 평단)보다 정한 %만큼 떨어지면 <b>전략과 상관없이 바로</b> 팔아요. 산 직후에도 지켜요.</li>
+        <li>손절로 판 뒤에는 <b>매수 신호가 한 번 꺼졌다가 다시 켜질 때</b> 다시 사요 (손절이 소용없어지지 않게).</li>
+        <li>계좌 카드에 🛑 손절선과 손절 가격이 보이고, 손절 뒤에는 "손절 뒤 쉬는 중"으로 나와요.</li>
+      </ul>
+    </section>
+
+    <!-- ========================= 8 ========================= -->
+    <section class="card" id="research">
+      <h2>연구 탭 (시뮬레이션)</h2>
+      <p>"과거에 이렇게 사고팔았다면?"을 계산해요. 위에서부터 <b>① 고르기 → ② 순위 → ③ 자세히</b> 순서예요 (코인·주식 같아요).</p>
+      <h3>① 고르기</h3>
+      <p><b>종목 · 판단 주기(코인) · 과거 기간 · 손절선</b>을 한 번만 골라요. 아래 순위와 자세히 보기가 다 이걸 따라가요. 기간은 1주~8년이에요 (15분봉은 3년까지).</p>
+      <h3>② 순위</h3>
+      <div class="mock">
+        <div class="cap">순위 카드 (예시) — 전략 + 조합 상위 5개를 같은 점수로 섞어서</div>
+        <div class="m-card">
+          <div><b>🏆 순위</b> <span class="muted" style="font-size:12px">삼성전자 · 최근 8년 · 수익률 순 · 조합 포함</span></div>
+          <div style="margin:6px 0"><span class="m-chip" style="background:var(--card);border:1px solid var(--line);color:var(--text)">전략 + 조합</span><span class="m-chip">전략만</span><span class="m-chip">조합만</span></div>
+          <table class="m-table">
+            <tr><th style="text-align:left">순위 · 전략</th><th>수익률</th></tr>
+            <tr><td>🥇 <span class="tag">조합</span> 살 때 터틀 트레이딩 · 팔 때 이동평균 정배열 <span class="ok">👍 두 절반</span><br><span class="muted">낙폭 -23% · 40회 · 승률 53%</span></td><td class="up">+419%</td></tr>
+            <tr><td>🥈 <span class="muted">바이앤홀드 (기준)</span></td><td class="up">+357%</td></tr>
+            <tr><td>🥉 <span class="tag">조합</span> 살 때 정배열 또는 터틀 · 팔 때 …</td><td class="up">+338%</td></tr>
+            <tr><td>7위 이동평균 정배열</td><td class="up">+186%</td></tr>
+          </table>
+          <div class="muted" style="font-size:12px;margin-top:6px">조합 1,296가지 중 상위 5개를 섞었어요 · ☆ 저장 · 🔁 다시 찾기 · 지난 조합 찾기 ▾</div>
+        </div>
+      </div>
+      <ul>
+        <li>같은 조건으로 <a href="#finder">좋은 조합</a>을 찾아 둔 게 있으면, <b>단일 전략 전부 + 바이앤홀드 + 조합 상위 5개</b>를 같은 계산·같은 점수로 섞어 보여줘요. 그래서 단일 전략과 조합을 나란히 비교할 수 있어요.</li>
+        <li><b>[전략 + 조합 / 전략만 / 조합만(30개)]</b>으로 바꿔 볼 수 있어요.</li>
+        <li>찾아 둔 조합이 없으면 전략 순위만 나오고, 아래 <span class="kbdbtn">🔍 조합도 찾아보기</span>(걸리는 시간 표시)로 파이에게 맡길 수 있어요.</li>
+        <li><b>👍 두 절반</b>: 기간을 반으로 나눠 앞·뒤 모두 그냥 들고 있기보다 나았다는 뜻이에요. 한쪽에서만 잘 된 것보다 믿을 만해요.</li>
+        <li>"똑같은 조합 N개 더": 사고판 때가 똑같아 결과가 같은 조합을 묶은 거예요.</li>
+        <li>폰에서는 이름 아래에 낙폭 · 매매 · 승률이 한 줄로 나와요. 줄을 누르면 ③ 자세히가 그 전략으로 바뀌어요.</li>
+        <li>코인은 <b>📈 곡선으로 비교</b>(상위 3개 + 고른 전략 + 바이앤홀드)를 펼쳐 볼 수 있어요.</li>
+      </ul>
+      <h3>③ 자세히</h3>
+      <ul>
+        <li><b>이 전략 vs 그냥 들고 있었다면</b> 표: 100만 원이 얼마가 됐을지 · 수익률 · 최대 낙폭, 그리고 "그냥 들고 있기보다 2.1%p 더 벌었어요" 같은 한 줄 판정.</li>
+        <li>사고판 횟수·이긴 비율·이 기간 순위·마지막 상태, 가격 차트 위 매수▲·매도▼와 들고 있던 구간, 내 돈 곡선.</li>
+        <li><b>💡 이 전략은?</b>: 고른 전략들의 설명.</li>
+        <li><span class="kbdbtn">✏️ 살 때·팔 때 직접 고르기</span>: 조합을 직접 만들어 볼 수 있어요 (평소엔 접혀 있어요).</li>
+        <li><span class="kbdbtn">➕ 이 전략으로 계좌 만들기</span>:
+          <ul>
+            <li>똑같은 계좌가 있으면 그 카드를 보여줘요.</li>
+            <li>같은 종목 계좌가 있으면 <b>그 계좌 전략을 이걸로 바꿀지, 새 계좌를 따로 만들지</b> 물어봐요. 바꾸기를 고르면 그 계좌의 '전략 바꾸기' 칸이 채워져 열리고, PIN을 넣어야 실제로 바뀌어요.</li>
+            <li>없으면 계좌 만들기 칸을 채워요 (금액·PIN을 넣어야 만들어져요).</li>
+          </ul></li>
+      </ul>
+      <h3>긴 기간 계산</h3>
+      <ul>
+        <li>봉이 1,500개 넘거나 3년 이상이면 파이가 따로 계산해요. 1분이 넘을 것 같으면 예상 시간을 보여주고 <span class="kbdbtn">계산 시작</span>을 눌러야 시작해요. 진행률·남은 시간·<span class="kbdbtn">■ 멈춤</span>이 있고 화면을 닫아도 계속해요.</li>
+        <li>모자란 과거 봉은 먼저 받아요. 계산은 매매를 방해하지 않게 우선순위를 낮춰 <b>코어 수 − 1개</b>로 해요.</li>
+        <li>결과는 그날 하루 저장돼서 다시 열면 바로 나와요. 계산 작업은 한 번에 하나예요.</li>
+        <li>상장한 지 얼마 안 된 종목은 있는 만큼만 계산하고 "※ 있는 만큼만 계산했어요"라고 알려 줘요.</li>
+      </ul>
+      <div class="warn">한 기간에서 1등인 조합이 다른 기간에서도 잘 되는지 꼭 확인하세요. 많이 비교해서 고를수록 <b>과거에만 우연히 맞은</b> 조합이 뽑히기 쉬워요. 👍 두 절반이 붙은 걸 먼저 보세요.</div>
+
+      <h3 id="finder">🔍 좋은 조합 찾기</h3>
+      <ul>
+        <li>② 순위의 <span class="kbdbtn">🔍 조합도 찾아보기</span>나 <span class="kbdbtn">🔁 다시 찾기</span>로 시작해요. 종목·주기·기간은 ① 고르기 그대로예요.</li>
+        <li>그 기간 <b>단일 전략 상위 6개</b>를 살 때·팔 때에 하나 또는 둘(그리고·또는)로 섞어요: 한쪽 36가지 × 다른 쪽 36가지 = <b>1,296가지</b>.</li>
+        <li>기간은 1·2·3·5·8년 (15분봉은 2년까지). 파이 3B에서 비트코인 4시간봉 3년이 약 30초, 8년이 약 1분 30초 걸렸어요.</li>
+        <li>진행률·남은 시간·멈춤이 ② 순위 아래에 나오고, 끝나면 순위에 바로 들어가요. <b>1분 넘게 걸린 계산</b>은 텔레그램으로도 1~5위를 보내요.</li>
+        <li>결과는 <b>최근 5개</b>가 저절로 남고, <span class="kbdbtn">☆ 저장</span>하면 50개까지 남아요. <b>지난 조합 찾기</b>에서 고르면 그 조건으로 바뀌어 다시 볼 수 있어요.</li>
+        <li>예전에 찾은 결과면 "순위는 ○○까지 데이터로 찾은 거라 자세히 보기(오늘까지)와 숫자가 조금 달라요"라고 알려 줘요. 🔁 다시 찾기로 맞추면 돼요.</li>
+        <li>손절선을 켜면 조합은 빼고 보여줘요 (조합 찾기는 손절선 없이 계산해요).</li>
+      </ul>
+    </section>
+
+    <!-- ========================= 9 ========================= -->
+    <section class="card" id="coin">
+      <h2>코인은 이렇게 움직여요</h2>
+      <ol class="steps">
+        <li><b>판단 주기마다 계획</b>: 계좌의 판단 주기에 새 봉이 시작될 때 전략이 직전까지의 봉을 보고 이번 계획을 세워요 (예: "1억 1,105만 원을 넘으면 매수", "매도 신호", "보유 유지", "관망").
+          <div class="scroll"><table><tr><th>주기</th><th>새 봉 시작 (한국 시간)</th></tr>
+            <tr><td>일봉</td><td>매일 09:00</td></tr><tr><td>4시간봉</td><td>01·05·09·13·17·21시</td></tr>
+            <tr><td>1시간봉</td><td>매시 정각</td></tr><tr><td>15분봉</td><td>15분마다</td></tr></table></div>
+          주기가 짧을수록 매매가 잦아 수수료가 쌓이고 잡음에 흔들려요.</li>
+        <li><b>매도 먼저, 매수 나중</b>: 매도 신호가 난 계좌만 팔고, 그다음 매수 신호가 난 계좌를 사요.</li>
+        <li><b>10초마다</b> 현재가를 보면서 돌파 매수·이탈 매도·손절선을 지켜요.</li>
+        <li>하루 한 번 종목·주기마다 전략 순위를 다시 매겨요 (일봉 3년, 4시간봉 1,500봉, 1·15분봉 2,000봉).</li>
+      </ol>
+      <p>업비트 최소 주문 금액은 5,000원이라, 계좌 원화가 그보다 적으면 사지 않아요.</p>
+    </section>
+
+    <!-- ========================= 10 ========================= -->
+    <section class="card" id="stock">
+      <h2>주식은 이렇게 움직여요</h2>
+      <p>국내 주식(코스피·코스닥)을 토스증권 Open API로 사고팔아요. 코인 봇과 따로 돌아서 한쪽에 문제가 생겨도 다른 쪽은 계속 돌아요. 판단은 <b>일봉</b>으로만 해요.</p>
+      <h3>사고파는 시간 — 그 종목이 거래되는 시간 전체</h3>
+      <div class="scroll"><table>
+        <tr><th>종목</th><th>카드 표시</th><th>사고파는 시간</th></tr>
+        <tr><td>넥스트레이드(NXT)에서도 거래되는 종목 (삼성전자 등)</td><td><span class="tag">KRX·NXT</span></td><td>프리마켓 08:00~08:50 · 정규장 09:00~15:20 · 애프터마켓 15:40~20:00</td></tr>
+        <tr><td>보통 주식 (KRX만)</td><td><span class="tag">KRX</span></td><td>정규장 09:00~15:20 · KRX 애프터마켓 16:00~20:00</td></tr>
+        <tr><td>ETF·ETN</td><td><span class="tag">KRX</span></td><td>정규장 09:00~15:20</td></tr>
+      </table></div>
+      <ul>
+        <li>하루 <b>첫 거래 때</b>(NXT 종목은 08:00, 나머지는 09:00) 계획을 세우고, 매도 신호 계좌를 먼저 판 다음 매수 신호 계좌를 사요.</li>
+        <li>그 뒤 거래되는 시간에는 10초마다 돌파 매수·이탈 매도·손절선·팔고 빼기를 해요. <b>장이 끝난 뒤에도 손 놓고 있지 않아요.</b></li>
+        <li>주문을 모아 한 가격에 한꺼번에 체결하는 단일가 시간(08:50~09:00, 15:20~15:40)에는 새 주문을 내지 않아요.</li>
+        <li>장 밖에서 한 매매는 기록에 '· 프리마켓', '· 애프터마켓'이 붙어요. 장 밖은 거래가 적어 값이 덜 좋을 수 있어요.</li>
+        <li>장 시간은 토스증권 장 달력으로 매일 확인하고, 종목이 NXT에 들어왔는지·ETF인지도 매일 확인해요. 휴장일은 쉬어요.</li>
+      </ul>
+      <h3>일봉과 계산</h3>
+      <ul>
+        <li>판단·순위·시뮬레이션·조합 찾기는 모두 <b>그날 거래가 다 들어간 일봉</b>(KRX·NXT 통합)으로 해요. 봇이 사고파는 시간과 같아야 결과가 맞아서예요.</li>
+        <li>NXT가 생기기 전 일봉은 원래 KRX 거래뿐이라, 같은 방식으로 과거 전체를 계산해도 예전과 같아요. KRX만 되던 종목이 NXT에 새로 들어오면 그날부터 일봉이 넓어질 뿐이에요.</li>
+        <li>계획의 '오늘 시가'는 그날 첫 거래 가격이에요 (NXT 종목은 08:00).</li>
+      </ul>
+      <h3>주문은 이렇게 내요</h3>
+      <ul>
+        <li><b>그 순간의 호가로</b>: 살 때는 가장 싼 매도 호가, 팔 때는 가장 비싼 매수 호가에 지정가를 내요 → 바로 체결되는 값이에요.</li>
+        <li>10초 안에 다 안 되면 남은 건 취소하고, 다음 확인 때 <b>그때의 호가를 새로 받아서</b> 다시 내요. 폭등·폭락 때 처음 값에 묶여 있지 않게요.</li>
+        <li><b>사는 쪽</b>: 호가가 계획 가격보다 1% 넘게 비싸면 쫓아 사지 않고 기다려요. 하루 첫 거래 매수는 5분 동안 다시 해 보고, 안 되면 그날은 건너뛰고 알려 줘요.</li>
+        <li><b>파는 쪽</b>: 매도 신호·손절·팔고 빼기는 빠져나오는 게 목적이라 다 팔릴 때까지 그때 호가로 다시 내요.</li>
+        <li>매매마다 계획 가격을 같이 적어서 🧾 기록 탭에 <b>체결 오차</b>(+ = 손해)와 평균(호가 몇 칸)을 보여줘요.</li>
+        <li>모의투자도 같은 호가로 체결됐다고 쳐서 실제와 비슷해요.</li>
+      </ul>
+      <div class="note"><b>호가 한 칸</b>은 가격대마다 달라요. 예를 들어 삼성전자(20만 원대)는 500원(약 0.24%)이라, 사고팔 때 한 칸씩만 밀려도 왕복 0.5% 가까이예요. ETF는 5원이라 거의 상관없어요. 그래서 시뮬레이션도 매매마다 한 칸 불리하게 계산해요.</div>
+    </section>
+
+    <!-- ========================= 11 ========================= -->
+    <section class="card" id="live">
+      <h2>실거래 시작하기</h2>
+      <div class="warn">실거래로 바꾸면 <b>진짜 돈으로 주문</b>이 나가요. 모의투자로 충분히 지켜본 뒤, 처음엔 작은 금액으로 시작하세요.</div>
+      <h3>코인 (업비트)</h3>
+      <ol class="steps">
+        <li><a href="#upbit-key">업비트 API 키</a>를 넣고, 업비트에 원화를 입금해요 (굴릴 금액보다 0.5% 정도 더).</li>
+        <li><span class="kbdbtn">⚙️ → 🪙 코인 계좌</span> → <b>실거래</b> → "실제 돈으로 주문이 나간다는 걸 이해했어요" 체크 → PIN → <b>계좌 바꾸기</b>. 위쪽 칩이 빨간 <b>실거래</b>가 되면 정상이에요. 업비트 원화는 <b>금고</b>로 들어와요.</li>
+        <li>코인 계좌를 만들고 금고에서 돈을 넣어요. <b>계좌로 옮긴 돈으로만</b> 사고팔아요.</li>
+        <li>그만하려면 계좌마다 <b>팔고 빼기</b> → 필요 없으면 <b>지우기</b>. 모의투자로 바꾸는 것만으로는 아무것도 팔지 않아요.</li>
+      </ol>
+      <h3>주식 (토스증권)</h3>
+      <ol class="steps">
+        <li><a href="#toss-key">토스증권 키</a>를 넣으면 1분 안에 주식 봇이 <b>모의투자</b>로 시작해요.</li>
+        <li>지켜본 뒤 <span class="kbdbtn">⚙️ → 📈 주식 계좌</span> → <b>실거래</b> → 체크 → PIN → <b>계좌 바꾸기</b>.</li>
+      </ol>
+      <div class="warn">토스증권 API에는 모의투자 서버가 없어서, 실거래로 바꾸면 첫 주문부터 진짜예요.</div>
+
+      <h3 id="upbit-key">업비트 API 키 받기</h3>
+      <ol class="steps">
+        <li>PC에서 <a href="https://upbit.com">업비트</a> 로그인 → <b>마이페이지 → Open API 관리</b>.</li>
+        <li>권한은 <b>자산조회 · 주문조회 · 주문하기</b>만. <b>출금 권한은 절대 주지 마세요</b> (키가 털려도 돈을 못 빼가게).</li>
+        <li><b>허용 IP</b>에 집 공인 IP를 넣어요 (공유기 관리 화면의 "외부 IP"). 집 IP가 바뀌면 여기만 고치면 돼요.</li>
+        <li>본인 인증 후 Access Key·Secret Key가 나와요. <b>Secret Key는 한 번만</b> 보여줘요. 카톡·메일로 보내지 마세요. 키는 <b>1년이면 만료</b>되고 연장이 안 돼요.</li>
+        <li>웹페이지 <span class="kbdbtn">⚙️ → 🪙 코인 계좌 → 🔑 업비트 키 넣기</span>에 두 키와 PIN → <b>연결해 보고 저장</b>. "연결 성공!"과 원화 잔고·만료일이 나오면 돼요. <b>집 와이파이에서만</b> 넣을 수 있어요.</li>
+      </ol>
+      <h3 id="toss-key">토스증권 키 받기</h3>
+      <ol class="steps">
+        <li>PC에서 토스증권 웹(WTS) → <b>설정 → Open API</b>에서 Client ID · Client Secret 발급.</li>
+        <li>같은 화면 <b>허용 IP 관리</b>에 집 공인 IP 등록.</li>
+        <li>토스증권 앱에서 <b>투자자지시 거래소</b>를 <b>통합(SOR)</b>으로 (아니면 주문이 거절돼요).</li>
+        <li>웹페이지 <span class="kbdbtn">⚙️ → 📈 주식 계좌 → 🔑 토스증권 키 넣기</span>에 두 값과 PIN → <b>연결해 보고 저장</b> (계좌가 여러 개면 고르는 칸이 나와요).</li>
+      </ol>
+    </section>
+
+    <!-- ========================= 12 ========================= -->
+    <section class="card" id="safety">
+      <h2>안전장치</h2>
+      <div class="grid2">
+        <div class="box"><h4>🏦 금고 돈은 안 써요</h4><p>실거래로 바꾸면 거래소 돈이 전부 금고로 들어오고, 봇은 계좌로 옮긴 돈으로만 사요.</p></div>
+        <div class="box"><h4>🔌 끊겨도 이어서</h4><p>주문마다 고유 번호를 붙여서, 도중에 끊기면 다시 켜질 때 거래소에 결과를 물어 장부를 맞추고 이어서 해요. 같은 주문이 두 번 나가지 않아요.</p></div>
+        <div class="box"><h4>🌐 집 IP 변경 감지</h4><p>10분마다 집 공인 IP를 확인해서, 거래소 허용 IP와 달라지면 경고해요. 허용 IP만 고치면 자동으로 다시 주문해요.</p></div>
+        <div class="box"><h4>🔑 키 만료 알림</h4><p>업비트 키 만료 30·14·7·3·1일 전에 텔레그램으로 알리고, 만료되면 갱신 방법까지 보내요.</p></div>
+        <div class="box"><h4>🔒 PIN</h4><p>바꾸는 건 모두 PIN이 필요해요. 처음은 0000이니 꼭 바꾸세요. 5번 틀리면 10분 잠겨요.</p></div>
+        <div class="box"><h4>🗝️ 키 보관</h4><p>키는 파이의 <code>~/My_Pie/.env</code>에만 있어요 (깃허브에 안 올라감). 화면에 다시 보이지 않아요.</p></div>
+      </div>
+      <h3>보안 체크리스트</h3>
+      <ul>
+        <li>☐ PIN 0000을 내 PIN으로 바꾸기</li>
+        <li>☐ 텔레그램 연결해서 로그인 코드 켜 두기</li>
+        <li>☐ API 키에 출금 권한 주지 않기, 허용 IP 등록하기</li>
+        <li>☐ SSH는 공개 키 로그인을 쓰고 비밀번호 로그인은 끄기 (<code>PasswordAuthentication no</code>)</li>
+        <li>☐ <code>.env</code>, <code>data/</code>, <code>config.toml</code>은 다른 사람에게 주지 않기</li>
+      </ul>
+    </section>
+
+    <!-- ========================= 13 ========================= -->
+    <section class="card" id="telegram">
+      <h2>텔레그램</h2>
+      <h3>연결하는 법</h3>
+      <ol class="steps">
+        <li>텔레그램에서 <b>@BotFather</b>에게 <code>/newbot</code>을 보내 이름과 아이디(끝이 <code>bot</code>)를 정하면 <b>봇 토큰</b>을 줘요.</li>
+        <li>웹페이지 <span class="kbdbtn">⚙️ → ✈️ 텔레그램</span>에 토큰과 PIN을 넣고 <b>연결 시작</b>.</li>
+        <li>화면에 나온 내 봇에게 <b>아무 메시지나</b> 보내면 자동으로 연결돼요.</li>
+      </ol>
+      <h3>되는 것</h3>
+      <ul>
+        <li><b>웹페이지 로그인</b>: 들어오면 로그인 코드(기본 2자리)가 <code>42 (192.168.0.10)</code>처럼 기기 IP와 함께 와요. 코드를 넣거나 <span class="kbdbtn">✅ 들여보내기</span>를 누르면 열려요. <span class="kbdbtn">🙅 거절</span>, 집 밖 IP면 <span class="kbdbtn">🚫 이 IP 막기</span>도 와요. 로그인은 최대 24시간 기억해요.</li>
+        <li><b>알림</b>: 매수·매도 체결(손절 포함), 오류, 집 IP 변경, 입금 감지, 설정 변경, 봇 재시작, 키 만료. 파이가 85°C를 3분 넘게 넘거나 전압이 모자라면 알려요.</li>
+        <li><b>리포트</b>: 코인은 아침 09시 매매 뒤, 주식은 장 마감 뒤.</li>
+        <li><b>SSH 로그인 감시</b>: 집 밖에서 로그인 성공하면 바로 알리고, 실패는 낮 12시·밤 12시에 모아서 IP별로 알려요. <span class="kbdbtn">🚫 IP 막기</span>를 누르면 파이 방화벽이 그 IP를 막아요 (집 안 IP는 안 막아요).</li>
+      </ul>
+      <h3>명령어</h3>
+      <div class="scroll"><table>
+        <tr><th>보내는 말</th><th>답장</th></tr>
+        <tr><td><code>/상태</code></td><td>금고·코인 계좌와 총 자산</td></tr>
+        <tr><td><code>/주식</code></td><td>주식 금고와 종목 계좌</td></tr>
+        <tr><td><code>/신호</code></td><td>계좌마다 전략이 지금 🔴 사자인지 🔵 팔자인지</td></tr>
+        <tr><td><code>/파이</code></td><td>라즈베리파이 온도·CPU·메모리·저장공간·전력</td></tr>
+        <tr><td><code>/기록</code></td><td>최근 매매 10건</td></tr>
+        <tr><td><code>/알림 BTC 1억</code></td><td>가격 알림 (그 가격에 닿으면 한 번). <code>/알림</code>만 보내면 목록·지우기 (코인만)</td></tr>
+        <tr><td><code>/재부팅 확인</code></td><td>라즈베리파이 재부팅</td></tr>
+        <tr><td><code>/차단목록</code> · <code>/차단해제 IP</code></td><td>막은 IP 보기·풀기</td></tr>
+        <tr><td><code>/도움</code></td><td>명령어 안내</td></tr>
+      </table></div>
+      <p>/상태·/주식·/신호·/파이 답장 아래 버튼(🪙 코인 · 📈 주식 · 🚦 신호 · 🍓 파이 · 🔄 새로고침)을 누르면 같은 메시지 안에서 바뀌어요.</p>
+    </section>
+
+    <!-- ========================= 14 ========================= -->
+    <section class="card" id="settings">
+      <h2>⚙️ 설정과 🎨 테마</h2>
+      <div class="scroll"><table>
+        <tr><th>칸</th><th>하는 일</th></tr>
+        <tr><td>✈️ 텔레그램</td><td>연결, 알림·로그인 켜고 끄기, 로그인 코드 자릿수(2~8), 테스트 메시지, 연결 끊기</td></tr>
+        <tr><td>🪙 코인 계좌</td><td>모의투자 ↔ 실거래, 🔑 업비트 키 넣기, 키 만료일</td></tr>
+        <tr><td>📈 주식 계좌</td><td>모의투자 ↔ 실거래, 🔑 토스증권 키 넣기</td></tr>
+        <tr><td>🔒 PIN</td><td>PIN 바꾸기 (코인·주식 공통)</td></tr>
+      </table></div>
+      <p><b>🎨 테마</b>는 ⚙️ 옆 버튼이에요: 1 라이트 퍼플 · 2 다크 트레이딩 · 3 화이트 블루 · 4 차분한 종이 · 5 벚꽃 핑크. 1·3·4·5는 폰이 어두운 모드면 어둡게 바뀌어요.</p>
+    </section>
+
+    <!-- ========================= 15 ========================= -->
+    <section class="card" id="pi">
+      <h2>라즈베리파이 상태</h2>
+      <p>🍓 파이 탭에 15초마다(코어 그래프는 2초마다) 나와요: CPU 온도, 메모리, 저장공간, 켜진 시간, 기록 DB 크기, 코어별 CPU 60초 그래프, 전력.</p>
+      <div class="scroll"><table>
+        <tr><th>모델</th><th>전력 (쉴 때 ~ 다 쓸 때)</th><th>권장 어댑터</th></tr>
+        <tr><td>5 · 500</td><td>실측</td><td>27W (5V 5A)</td></tr>
+        <tr><td>4B · 400</td><td>약 2.7 ~ 6.4W</td><td>15W (5V 3A)</td></tr>
+        <tr><td>3B+</td><td>약 1.9 ~ 5.1W</td><td>12.5W (5V 2.5A)</td></tr>
+        <tr><td>3B</td><td>약 1.4 ~ 3.7W</td><td>12.5W (5V 2.5A)</td></tr>
+        <tr><td>3A+ · 제로 2 W</td><td>약 0.6 ~ 3W</td><td>12.5W (5V 2.5A)</td></tr>
+      </table></div>
+      <p>전력 막대가 <span class="up">빨강</span>이면 지금 전압이 모자란 거예요 (주황은 켜진 뒤 한 번이라도 모자랐음). 전압이 모자라면 SD카드가 깨질 수 있으니 정격 어댑터와 짧고 굵은 케이블을 쓰세요.</p>
+    </section>
+
+    <!-- ========================= 16 ========================= -->
+    <section class="card" id="outside">
+      <h2>집 밖에서 보기 (선택)</h2>
+      <ol class="steps">
+        <li><b>주소 예약</b>: 파이 IP가 바뀌지 않게 공유기에서 고정해요.</li>
+        <li><b>DDNS</b>: 집 공인 IP는 가끔 바뀌어요. DDNS를 켜면 <code>내이름.iptime.org</code> 같은 바뀌지 않는 주소가 생겨요 (ipTIME: 고급 설정 → 특수기능 → DDNS 설정).</li>
+        <li><b>포트포워딩</b>: 내부 IP는 파이, 내부 포트는 <b>8000</b>, 외부 포트는 8000이 아닌 번호(예: 18000)가 덜 찔려요 (ipTIME: 고급 설정 → NAT/라우터 관리 → 포트포워드 설정).</li>
+        <li>밖에서 <code>http://내이름.iptime.org:&lt;외부 포트&gt;</code>로 들어가요.</li>
+      </ol>
+      <div class="warn">포트를 열기 전에: <b>텔레그램 연결</b>(안 하면 누구나 볼 수 있어요), <b>PIN 바꾸기</b>. 웹페이지는 https가 아니라 공용 와이파이에서는 조심하세요. SSH(22번)는 열지 않는 게 좋아요.</div>
+    </section>
+
+    <!-- ========================= 17 ========================= -->
+    <section class="card" id="trouble">
+      <h2>문제가 생기면</h2>
+      <div class="scroll"><table>
+        <tr><th>증상</th><th>해 볼 것</th></tr>
+        <tr><td>웹페이지가 안 열려요</td><td><code>systemctl --user status mypie-web</code> · 파이 IP가 바뀌지 않았는지 공유기에서 확인</td></tr>
+        <tr><td>봇이 멈춘 것 같아요</td><td><code>journalctl --user-unit mypie-bot -f</code>로 로그 보기 (주식은 <code>mypie-stock</code>)</td></tr>
+        <tr><td>서비스가 안 켜져요</td><td>폴더가 <code>~/My_Pie</code>인지 확인</td></tr>
+        <tr><td>SSH 접속을 끊으면 봇도 멈춰요</td><td><code>sudo loginctl enable-linger $USER</code></td></tr>
+        <tr><td>실거래 주문이 IP 때문에 거절돼요</td><td>집 공인 IP가 바뀌었을 수 있어요. 업비트·토스증권 허용 IP를 다시 등록</td></tr>
+        <tr><td>화면에 "전압 부족"</td><td>정격 어댑터와 짧고 굵은 케이블로 바꾸기</td></tr>
+        <tr><td>텔레그램이 안 돼서 로그인을 못 해요</td><td>파이에서 <code>python3 -m mypie.telegram --code</code> (코드 출력) 또는 <code>--off</code> (연결 끊기)</td></tr>
+        <tr><td>키 넣기가 "집 와이파이에서만"이라며 안 돼요</td><td>폰·PC를 집 와이파이에 연결하고 다시 넣기</td></tr>
+        <tr><td>키를 넣었다는 알림이 왔는데 내가 안 했어요</td><td>거래소에서 그 키를 바로 지우고, PIN 바꾸기</td></tr>
+        <tr><td>PIN을 잊었어요</td><td>파이에서 <code>python3 -m mypie.pin</code></td></tr>
+        <tr><td>IP 막기 버튼이 권한이 없대요</td><td>파이에서 한 번만 <code>sudo bash ~/My_Pie/deploy/firewall-setup.sh</code></td></tr>
+        <tr><td>SSH 로그인 감시 알림이 안 와요</td><td><code>sudo usermod -aG adm $USER</code> 후 다시 로그인</td></tr>
+        <tr><td>주식 화면이 비어 있어요</td><td>주식은 모의투자도 토스증권 키가 필요해요 (<a href="#toss-key">키 받기</a>)</td></tr>
+        <tr><td>모의투자를 처음부터 다시</td><td>서비스를 멈추고 <code>data/mypie.db</code>·<code>data/stock.db</code>를 지운 뒤 다시 시작 (PIN도 0000으로)</td></tr>
+      </table></div>
+    </section>
+
+    <!-- ========================= 18 ========================= -->
+    <section class="card" id="commands">
+      <h2>자주 쓰는 명령</h2>
+      <p>파이에서 <code>cd ~/My_Pie</code> 한 다음:</p>
+      <pre><code>systemctl --user status mypie-bot mypie-web mypie-stock   # 상태
+journalctl --user-unit mypie-bot -f             # 봇 로그 실시간 (주식은 mypie-stock)
+systemctl --user restart mypie-bot mypie-web mypie-stock  # 설정 파일을 바꾼 뒤 재시작
+python3 -m mypie.pin                            # PIN 새로 정하기
+python3 -m mypie.keys                           # 업비트 키 등록/변경
+python3 -m mypie.keys --check                   # 업비트 키 확인·만료일
+python3 -m mypie.toss                           # 토스증권 키 등록/변경
+python3 -m mypie.toss --check                   # 토스증권 키 확인
+python3 -m mypie.telegram --code                # 텔레그램이 안 될 때 로그인 코드
+python3 -m mypie.telegram --off                 # 텔레그램 연결 끊기
+python3 -m unittest discover -s tests -v        # 테스트 (실제 주문·텔레그램 없음)</code></pre>
+      <p>세부 숫자(전략 파라미터, 순위 기준, 로그인 유지 시간 등)는 <code>config.toml</code>에서 바꿔요. 항목 설명은 <code>config.example.toml</code>에 있어요.</p>
+    </section>
+
+    <!-- ========================= 19 ========================= -->
+    <section class="card" id="words">
+      <h2>용어 풀이</h2>
+      <div class="scroll"><table>
+        <tr><th>말</th><th>뜻</th></tr>
+        <tr><td>바이앤홀드</td><td>사서 그냥 들고만 있기. 전략이 이것보다 나은지 비교하는 기준이에요.</td></tr>
+        <tr><td>백테스트 · 시뮬레이션</td><td>과거 데이터로 "그때 이 전략대로 했다면?"을 계산해 보는 것.</td></tr>
+        <tr><td>봉 · 일봉 · 4시간봉</td><td>정해진 시간 동안의 시가·고가·저가·종가를 묶은 것. 일봉은 하루, 4시간봉은 4시간.</td></tr>
+        <tr><td>판단 주기</td><td>계획을 새로 세우는 간격 (코인: 일봉·4시간·1시간·15분, 주식: 일봉).</td></tr>
+        <tr><td>최대 낙폭 (MDD)</td><td>가장 높았던 때에서 가장 많이 떨어졌던 비율. 버티기 힘든 정도를 보여줘요.</td></tr>
+        <tr><td>승률</td><td>판 매매 중 이익을 본 비율.</td></tr>
+        <tr><td>확정 손익</td><td>팔아서 확정된 손익 (수수료·세금 뺀 뒤). 들고 있는 건 평가 손익이에요.</td></tr>
+        <tr><td>손절선</td><td>산 값보다 정한 %만큼 떨어지면 무조건 파는 선.</td></tr>
+        <tr><td>호가 · 호가 한 칸</td><td>사고팔려고 내놓은 가격들. 한 칸은 가격이 움직이는 최소 단위 (가격대마다 달라요).</td></tr>
+        <tr><td>체결 오차</td><td>계획한 가격보다 실제로 얼마나 불리하게(또는 유리하게) 체결됐는지.</td></tr>
+        <tr><td>KRX · NXT</td><td>한국거래소 · 넥스트레이드(2025년에 생긴 두 번째 거래소, 08:00~20:00).</td></tr>
+        <tr><td>프리마켓 · 애프터마켓</td><td>정규장(09:00~15:30) 전·후에 거래되는 시간.</td></tr>
+        <tr><td>단일가 (동시호가)</td><td>주문을 모았다가 한 가격으로 한꺼번에 체결하는 시간 (08:50~09:00, 15:20~15:30 등).</td></tr>
+        <tr><td>SOR (통합)</td><td>주문을 KRX·NXT 중 유리한 쪽으로 증권사가 알아서 보내는 방식.</td></tr>
+        <tr><td>금고 · 계좌</td><td>쉬는 돈 · 종목 하나와 전략으로 따로 굴리는 돈 (<a href="#vault">자세히</a>).</td></tr>
+        <tr><td>👍 두 절반</td><td>기간을 반으로 나눠 앞·뒤 모두 바이앤홀드보다 나았다는 표시.</td></tr>
+      </table></div>
+    </section>
+
+    <footer>🐜 AntLab 개미연구소 설명서 · 투자 판단과 책임은 본인에게 있어요 · <a href="#top">맨 위로</a></footer>
+  </main>
+</div>
+<button type="button" class="top-btn" id="topBtn" aria-label="맨 위로">↑</button>
+<script>
+  // 폰: 목차 펼치기·접기 (고르면 접는다)
+  const toc = document.getElementById('toc'), menu = document.getElementById('menuBtn');
+  menu.addEventListener('click', () => { const open = toc.classList.toggle('open'); menu.setAttribute('aria-expanded', String(open)); });
+  toc.querySelectorAll('ol a').forEach((a) => a.addEventListener('click', () => { toc.classList.remove('open'); menu.setAttribute('aria-expanded', 'false'); }));
+  document.getElementById('topBtn').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  // 지금 읽는 곳을 목차에 표시
+  const links = new Map([...toc.querySelectorAll('ol a')].map((a) => [a.getAttribute('href').slice(1), a]));
+  if ('IntersectionObserver' in window) {
+    const seen = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        links.forEach((a) => a.classList.remove('on'));
+        const a = links.get(e.target.id);
+        if (a) a.classList.add('on');
+      }
+    }, { rootMargin: '-10% 0px -80% 0px' });
+    links.forEach((_, id) => { const el = document.getElementById(id); if (el) seen.observe(el); });
+  }
+</script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 
 라즈베리파이에서 24시간 돌아가는 **업비트 코인 자동매매 봇**, **토스증권 국내 주식 자동매매 봇**과 **모니터링 웹페이지**예요.
 
+📖 **그림과 함께 보는 설명서**: https://jounghyun.github.io/LiarsPie/ (같은 내용이 저장소의 `docs/index.html`에 있어요)
+
 > 예전 이름은 My_Pie예요. 설치 폴더(`~/My_Pie`)와 프로그램 이름(`mypie`)은 그대로라서 따로 바꿀 건 없어요.
 
 - **금고 + 계좌**: 코인·주식 모두 돈을 **금고**와 **계좌** 여러 개로 나눠 써요. 계좌마다 **종목 + 전략(조합) + 손절선**(코인은 판단 주기도)이 있고, 자기 돈으로만 따로 사고팔아요. 같은 종목도 전략을 달리해서 여러 계좌로 굴릴 수 있어요 ([금고와 계좌](#금고와-계좌))
@@ -435,6 +437,7 @@ tests/              테스트
 deploy.ps1          Windows PC → 파이로 코드 올리기
 deploy.local.example.ps1  내 파이 주소·아이디 적는 틀 (deploy.local.ps1로 복사, 깃허브에 안 올라감)
 INSTALL.md          설치 설명서
+docs/index.html     그림과 함께 보는 설명서 (GitHub Pages로 웹페이지처럼 보기)
 ```
 
 새 전략은 `mypie/strategies/`에 `Strategy`나 `SignalStrategy`를 상속해서 만들고 `strategies/__init__.py`의 목록에 추가하면, 순위표와 웹페이지에 자동으로 나타나요.
