@@ -1672,8 +1672,11 @@ class CurveTest(TempDbTest):
     BARS = [("2026-10-21 09:00:00", 99), ("2026-10-21 12:00:00", 110), ("2026-10-21 14:00:00", 90)]
 
     def test_follows_the_trades(self):
-        points = curve.build(self.TRADES, self.BARS, price_now=80, now="2026-10-21 15:00:00")["points"]
-        self.assertEqual(points[0], ["2026-10-21 10:00:00", 0.0, 0.0])    # 첫 매매부터 (그 전 봉은 버린다)
+        data = curve.build(self.TRADES, self.BARS, price_now=80, now="2026-10-21 15:00:00")
+        points = data["points"]
+        self.assertEqual(points[0], ["2026-10-21 10:00:00", 0.0, 0.0, 100.0])  # 첫 매매부터 (그 전 봉은 버린다), 끝은 그때 가격
+        self.assertEqual([p[3] for p in points[1:]], [110.0, 90.0, 80.0])
+        self.assertEqual(data["trades"], [["2026-10-21 10:00:00", "buy", 100.0], ["2026-10-21 13:00:00", "sell", 120.0]])  # ▲▼ 표시용
         self.assertAlmostEqual(points[1][1], (0.9995 * 1.1 - 1) * 100)      # 들고 있는 동안은 가격만큼
         self.assertAlmostEqual(points[2][1], (0.9995 * 1.2 * 0.9995 - 1) * 100)  # 판 뒤에는 그대로
         self.assertAlmostEqual(points[-1][1], points[2][1])

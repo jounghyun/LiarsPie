@@ -338,6 +338,16 @@ function barLabel(key, tf) {  // 봉 키 → 화면에 보일 시각 (KST)
   const k = new Date(new Date(key + ':00Z').getTime() + 9 * 3600e3).toISOString();
   return `${k.slice(5, 10)} ${k.slice(11, 16)}`;
 }
+function kstTime(key, tf) {  // 봉 키 → 연도까지 붙은 한국 시각 ('2025-11-30 21:00', 일봉은 날짜만)
+  if (tf === '1d' || tf === '1w') return key.slice(0, 10);
+  const k = new Date(new Date(key + ':00Z').getTime() + 9 * 3600e3).toISOString();
+  return `${k.slice(0, 10)} ${k.slice(11, 16)}`;
+}
+function axisLabel(first, last, tf, days) {  // 그래프 아래 날짜: 해가 바뀌는 기간이면 연도까지, 한 달이 넘으면 시각은 빼고
+  const years = kstTime(first, tf).slice(0, 4) !== kstTime(last, tf).slice(0, 4);
+  return (key) => kstTime(key, tf).slice(years ? 0 : 5, tf === '1d' || days > 30 ? 10 : 16);
+}
+function farFrom(y, ys, gap = 13) { return ys.every(o => Math.abs(o - y) >= gap); }  // 눈금 글자끼리 겹치지 않게
 function leftText(ms) {
   if (ms < 0) ms = 0;
   const h = Math.floor(ms / 3600e3), m = Math.floor(ms % 3600e3 / 60e3);
@@ -541,7 +551,7 @@ function renderSlots(s) {
     // 펼친 카드: 넓은 화면에서는 한 줄을 다 쓰고 왼쪽(가격·전략) · 오른쪽(숫자 칸·그래프)으로 나눈다
     card.append(head, el('div', { class: 'slot-body' }, el('div', { class: 'slot-main' }, when, price, strat, state),
                          el('div', { class: 'slot-side' }, foot, curveBox('coin', x.id))), acts, panel);
-    card.onclick = (ev) => { if (!ev.target.closest('.slot-actions, .panel')) selectMarket(x.rank_key); };
+    card.onclick = (ev) => { if (!ev.target.closest('.slot-actions, .panel, .curve')) selectMarket(x.rank_key); };  // 그래프를 대 보는 건 빼고
     box.append(card);
   });
   const add = el('div', { class: 'card add-card', text: '＋ 코인 계좌 만들기' });
@@ -1132,19 +1142,19 @@ function drawSim() {  // 위: 가격 + 사고판 지점 + 들고 있던 구간, 
   }
   text('가격 · ▲샀을 때 ▼팔았을 때 · 색칠한 곳은 코인을 들고 있던 때', 0, 13, { 'font-weight': 600 });
   // 내 돈
-  for (const v of [ehi - epad, 1, elo + epad]) {
+  for (const v of [1, ehi - epad, elo + epad]) {  // 0%를 먼저, 위아래 끝은 0%와 겹치면 글자를 뺀다
     root.append(svg('line', { x1: 0, x2: W - padR, y1: ye(v), y2: ye(v), stroke: 'var(--line)', 'stroke-dasharray': v === 1 ? '4 4' : '' }));
-    text(pct((v - 1) * 100, 0), W - padR + 6, ye(v) + 4);
+    if (v === 1 || farFrom(ye(v), [ye(1)])) text(pct((v - 1) * 100, 0), W - padR + 6, ye(v) + 4);
   }
   const path = (vals) => vals.map((v, i) => `${x(i).toFixed(1)},${ye(v).toFixed(1)}`).join(' ');
   root.append(svg('polyline', { points: path(d.hold), fill: 'none', stroke: 'var(--c5)', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }));
   root.append(svg('polyline', { points: path(d.equity), fill: 'none', stroke: 'var(--brand)', 'stroke-width': 2.4, 'stroke-linejoin': 'round' }));
   text('내 돈 (100만 원으로 시작)', 0, top2 - 8, { 'font-weight': 600 });
   // 아래 날짜
-  const ticks = W < 600 ? 3 : 5;
+  const ticks = W < 600 ? 3 : 5, dateOf = axisLabel(d.keys[0], d.keys[n - 1], tf, r.days);
   for (let k = 0; k <= ticks; k++) {
     const i = Math.round((n - 1) * k / ticks);
-    text(barLabel(d.keys[i], tf), x(i), H - 4, { 'text-anchor': k === 0 ? 'start' : k === ticks ? 'end' : 'middle' });
+    text(dateOf(d.keys[i]), x(i), H - 4, { 'text-anchor': k === 0 ? 'start' : k === ticks ? 'end' : 'middle' });
   }
   const cross = svg('line', { x1: 0, x2: 0, y1: padT, y2: top2 + eqH, stroke: 'var(--muted)', 'stroke-dasharray': '3 3', opacity: 0 });
   root.append(cross);
@@ -1158,7 +1168,7 @@ function drawSim() {  // 위: 가격 + 사고판 지점 + 들고 있던 구간, 
     const i = Math.max(0, Math.min(n - 1, Math.round(mx / (W - padR) * (n - 1))));
     cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('opacity', .7);
     tip.innerHTML = '';
-    tip.append(el('b', { text: tf === '1d' ? d.keys[i] : barLabel(d.keys[i], tf) + ' 시작' }),
+    tip.append(el('b', { text: tf === '1d' ? d.keys[i] : kstTime(d.keys[i], tf) + ' 시작' }),
       el('div', { text: `가격 ${priceText(d.close[i])}` }),
       el('div', { text: `이 전략 ${won(SIM_BASE * d.equity[i])} (${pct((d.equity[i] - 1) * 100, 1)})` }),
       el('div', { text: `그냥 들고 있기 ${pct((d.hold[i] - 1) * 100, 1)}` }));
@@ -1232,8 +1242,9 @@ function renderCompare() {  // 위 시뮬레이션과 같은 종목·주기·기
   const lo = Math.min(...all, 1), hi = Math.max(...all, 1);
   const y = (v) => padT + (hi - v) / (hi - lo || 1) * (H - padT - 20);
   const root = svg('svg', { viewBox: `0 0 ${W} ${H}`, height: H });
-  for (const v of [lo, 1, hi]) {
+  for (const v of [1, hi, lo]) {  // 0%와 겹치는 끝 눈금은 글자를 뺀다
     root.append(svg('line', { x1: 0, x2: W - padR, y1: y(v), y2: y(v), stroke: 'var(--line)', 'stroke-dasharray': v === 1 ? '4 4' : '' }));
+    if (v !== 1 && !farFrom(y(v), [y(1)])) continue;
     const t = svg('text', { x: W - padR + 6, y: y(v) + 4, 'font-size': 11, fill: 'var(--muted)' }); t.textContent = pct((v - 1) * 100, 0); root.append(t);
   }
   chosen.forEach((r, k) => {
@@ -1241,7 +1252,8 @@ function renderCompare() {  // 위 시뮬레이션과 같은 종목·주기·기
     root.append(svg('polyline', { points: pts, fill: 'none', stroke: colors[k], 'stroke-width': r.name === active ? 3 : 1.8,
                                   'stroke-dasharray': r.name === 'buy_and_hold' ? '5 4' : '', 'stroke-linejoin': 'round' }));
   });
-  for (const [txt, anchor, xx] of [[barLabel(rk.from, tf), 'start', 0], [barLabel(rk.to, tf), 'end', W - padR]]) {
+  const dateOf = axisLabel(rk.from, rk.to, tf, rk.days);
+  for (const [txt, anchor, xx] of [[dateOf(rk.from), 'start', 0], [dateOf(rk.to), 'end', W - padR]]) {
     const t = svg('text', { x: xx, y: H - 3, 'font-size': 11, fill: 'var(--muted)', 'text-anchor': anchor }); t.textContent = txt; root.append(t);
   }
   box.innerHTML = ''; box.append(root);

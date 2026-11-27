@@ -467,7 +467,7 @@ function renderSlots(s) {
     }
     card.append(acts, panel);
     if (S.open.slot === x.id) panel.append(slotPanel(x, S.open.kind));
-    card.onclick = (ev) => { if (!ev.target.closest('.slot-actions, .panel')) selectSymbol(x.symbol); };
+    card.onclick = (ev) => { if (!ev.target.closest('.slot-actions, .panel, .curve')) selectSymbol(x.symbol); };  // 그래프를 대 보는 건 빼고
     box.append(card);
   });
   const add = el('div', { class: 'card add-card', text: '＋ 종목 계좌 만들기' });
@@ -936,7 +936,10 @@ function drawSim() {
     root.append(svg('polygon', { points: tri, fill: buy ? 'var(--up)' : 'var(--down)', stroke: 'var(--card)', 'stroke-width': 1.2 }));
   }
   text('가격 · ▲샀을 때 ▼팔았을 때 · 색칠한 곳은 주식을 들고 있던 때', 0, 13, { 'font-weight': 600 });
-  for (const v of [ehi - epad, 1, elo + epad]) { root.append(svg('line', { x1: 0, x2: W - padR, y1: ye(v), y2: ye(v), stroke: 'var(--line)', 'stroke-dasharray': v === 1 ? '4 4' : '' })); text(pct((v - 1) * 100, 0), W - padR + 6, ye(v) + 4); }
+  for (const v of [1, ehi - epad, elo + epad]) {  // 0%와 겹치는 끝 눈금은 글자를 뺀다
+    root.append(svg('line', { x1: 0, x2: W - padR, y1: ye(v), y2: ye(v), stroke: 'var(--line)', 'stroke-dasharray': v === 1 ? '4 4' : '' }));
+    if (v === 1 || Math.abs(ye(v) - ye(1)) >= 13) text(pct((v - 1) * 100, 0), W - padR + 6, ye(v) + 4);
+  }
   const path = (vals) => vals.map((v, i) => `${x(i).toFixed(1)},${ye(v).toFixed(1)}`).join(' ');
   root.append(svg('polyline', { points: path(d.hold), fill: 'none', stroke: 'var(--c5)', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }));
   root.append(svg('polyline', { points: path(d.equity), fill: 'none', stroke: 'var(--brand)', 'stroke-width': 2.4 }));

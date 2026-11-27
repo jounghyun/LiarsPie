@@ -11,19 +11,20 @@ from . import timeframes
 from .db import Database
 from .timeutil import KST, now_kst, ts
 
-MAX_POINTS = 160  # 카드 안 작은 그래프라 이 정도면 충분하다
+MAX_POINTS = 240  # 카드 안 그래프라 이 정도면 충분하다
 
 
 def build(trades: list[dict], bars: list[tuple[str, float]], price_now: float | None = None,
           now: str | None = None) -> dict:
     """trades: 이 계좌 매매 (오래된 것부터, ts·side·price·krw·fee). bars: (봉이 끝나는 시각, 종가) 오래된 것부터.
-    {"start": 첫 매매 시각, "points": [[시각, 전략 %, 그냥 들고 있었다면 %], ...]}. 매매가 없으면 points가 비어 있다."""
+    {"start": 첫 매매 시각, "points": [[시각, 전략 %, 그냥 들고 있었다면 %, 가격], ...], "trades": [[시각, buy|sell, 가격], ...]}.
+    매매가 없으면 points가 비어 있다."""
     if not trades:
-        return {"start": None, "points": []}
+        return {"start": None, "points": [], "trades": []}
     start, ref = trades[0]["ts"], float(trades[0]["price"])  # 바이앤홀드는 첫 매매 가격에 샀다고 친다
     holding = trades[0]["side"] == "sell"  # 처음이 매도면 그 전부터 들고 있었다
     index, mark, i = 1.0, ref, 0  # 전략 지수, 마지막으로 값을 매긴 가격, 다음 매매
-    points = [[start, 0.0, 0.0]]
+    points = [[start, 0.0, 0.0, ref]]
 
     def trade_until(when: str | None) -> None:
         nonlocal index, mark, holding, i
@@ -39,7 +40,7 @@ def build(trades: list[dict], bars: list[tuple[str, float]], price_now: float | 
         if holding:
             index *= price / mark
         mark = price
-        points.append([when, (index - 1) * 100, (price / ref - 1) * 100])
+        points.append([when, (index - 1) * 100, (price / ref - 1) * 100, price])
 
     for end, close in bars:
         if end <= start:
@@ -52,7 +53,7 @@ def build(trades: list[dict], bars: list[tuple[str, float]], price_now: float | 
     if len(points) > MAX_POINTS:  # 골고루 줄이되 처음과 끝은 남긴다
         step = (len(points) - 1) / (MAX_POINTS - 1)
         points = [points[round(k * step)] for k in range(MAX_POINTS)]
-    return {"start": start, "points": points}
+    return {"start": start, "points": points, "trades": [[t["ts"], t["side"], float(t["price"])] for t in trades]}
 
 
 def slot_trades(db: Database, mode: str, slot: str) -> list[dict]:
